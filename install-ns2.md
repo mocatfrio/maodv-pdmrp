@@ -29,12 +29,14 @@ NS-2 adalah sebuah simulator yang ditargetkan untuk penelitian jaringan. NS-2 me
 
 ### 2. Install Dependencies
 1. Menginstall **gcc-4.4** dan **g++-4.4**
+   
     ```bash
     sudo add-apt-repository ppa:ubuntu-toolchain-r/test
     sudo apt-get update
     sudo apt-get install gcc-4.4 g++-4.4
     ```
 2. Menginstall dependensi yang diperlukan
+   
     ```bash
     sudo apt-get install build-essential automake autoconf libxmu-dev
     ```
