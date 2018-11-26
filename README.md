@@ -41,7 +41,7 @@ Habisnya energi baterai suatu node menyebabkan rusaknya rute pada jaringan MANET
   * Paket hilang
   * Node akan menginisialisasi Route Discovery (pencarian rute) ulang, sehingga menyebabkan banyaknya konsumsi bandwith, meningkatkan delay, dan mengurangi throughput
   
-Oleh karena itu, paper ini mengusulkan sebuah routing protocol baru bernama **PDMRP** *(Power and Delay-aware Multi-path Routing Protocol)* yang memperbaiki keterbatasan dari **SPR** *(Stable Path Routing Protocol based on Power Awareness)* dan **MAODV** *(Modified Ad Hoc On-Demand Distance Vector Routing Protocol)* dalam segi throughput, end-to-end delay, dan loss rate. 
+Oleh karena itu, paper ini mengusulkan sebuah routing protocol baru bernama **PDMRP** *(Power and Delay-aware Multi-path Routing Protocol)* yang memperbaiki kekurangan dari **SPR** *(Stable Path Routing Protocol based on Power Awareness)* dan **MAODV** *(Modified Ad Hoc On-Demand Distance Vector Routing Protocol)* dalam segi throughput, end-to-end delay, dan loss rate. 
 
 ### 1.3 Dasar Teori
 #### 1.3.1 AODV Routing Protocol
@@ -102,7 +102,7 @@ Oleh karena itu, paper ini mengusulkan sebuah routing protocol baru bernama **PD
         * Jika bandwith tidak tersedia, maka paket RREQ di-drop.
         * Jika bandwith tersedia, maka ia akan **mengurangi TTL paket**. 
           * Jika TTL telah mencapai 0, maka paket RREQ di-drop.
-  2. Setelah itu, **node intermediate** akan **membandingkan sisa masa hidupnya dengan nilai ML** pada paket. Jika lebih kecil, maka nilai ML akan diganti dengan sisa masa hidupnya karena ML menyimpan sisa hidup minimum node yang dilewati oleh rute.
+  2. Setelah itu, **node intermediate** akan **membandingkan sisa masa hidupnya (sisa energi baterai) dengan nilai ML** pada paket. Jika lebih kecil, maka nilai ML akan diganti dengan sisa masa hidupnya karena ML menyimpan sisa energi baterai minimum node yang dilewati oleh rute.
   3. Ketika **node intermediate** menerima RREQ yang sama dari asal yang berbeda, maka ia akan **membandingkan nilai ML dari kedua paket.** 
       * Jika ML dari paket RREQ yang baru lebih besar, maka ia mem-broadcast ulang paket RREQ yang baru. 
       * Jika sebaliknya, paket RREQ di-drop.
