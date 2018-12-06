@@ -1,47 +1,51 @@
+# Skenario testing
+
 # ======================================================================
 # Define options
 # ======================================================================
 
-set val(chan)       	  	Channel/WirelessChannel		    ;# channel type
-set val(prop)       		  Propagation/TwoRayGround	    ;# radio-propagation model
-set val(netif)      		  Phy/WirelessPhy   			      ;# network interface type
-set val(mac)        		  Mac/802_11		          	    ;# MAC type
-set val(ifq)        		  Queue/DropTail/PriQueue		    ;# interface queue type
-set val(ll)         		  LL			             	        ;# link layer type
-set val(ant)        		  Antenna/OmniAntenna		        ;# antenna model
-set opt(x)              	530                           ;# X dimension of the topography
-set opt(y)              	530                           ;# Y dimension of the topography
-set val(ifqlen)         	50				                    ;# max packet in ifq
-set val(nn)             	5				                      ;# how many nodes are simulated
-set val(seed)				      1.0				                    ;# seed cbr
-set val(adhocRouting)   	AOMDV				                  ;# routing protocol
-set val(stop)           	200				                    ;# simulation time
-set val(cp)					      "cbr5node.tcl"			          ;#<-- traffic file
-set val(sc)					      "setdes500x500.tcl"			      ;#<-- mobility file 
-#set val(sc)              "setdest5node.tcl"            ;#<-- mobility file 
+set val(chan)       		  Channel/WirelessChannel		  ;# channel type
+set val(prop)       		  Propagation/TwoRayGround	  ;# radio-propagation model
+set val(netif)      		  Phy/WirelessPhy   			    ;# network interface type
+set val(mac)        		  Mac/802_11		          	  ;# MAC type
+set val(ifq)        		  Queue/DropTail/PriQueue		  ;# interface queue type
+set val(ll)         		  LL			             	      ;# link layer type
+set val(ant)        		  Antenna/OmniAntenna		      ;# antenna model
+set opt(x)              	530                         ;# X dimension of the topography
+set opt(y)              	530                         ;# Y dimension of the topography
+set val(ifqlen)         	50				                  ;# max packet in ifq
+set val(nn)             	5				                    ;# how many nodes are simulated
+set val(seed)				      1.0				                  ;# seed cbr
+set val(adhocRouting)   	AOMDV				                ;# routing protocol
+set val(stop)           	200				                  ;# simulation time
+set val(cp)					      "cbr5node.tcl"			        ;#<-- traffic file
+set val(sc)               "setdes500x500.tcl"		      ;#<-- mobility file 
+# set val(sc)                 "setdest5node.tcl"          ;#<-- mobility file 
 
-# #Add energy
-# #src: https://www.nsnam.com/2012/11/energy-model-in-network-simulator-2-ns2.html
-# set val(energy_mod)         EnergyModel                 ;# energy model
-# set val(energy_init)        5                           ;# init val for energy
-# set val(tx_power)           0.33                        ;# energy consume for transmiting packet
-# set val(rx_power)           0.1                         ;# energy consume for receiving packet
-# set val(idle_power)         0.05                        ;# energy consume for idle
-# set val(sleep_power)        0.03                        ;# energy consume for sleep mode
+# add energy model
+# src: https://www.nsnam.com/2012/11/energy-model-in-network-simulator-2-ns2.html
+set val(energy_mod)       EnergyModel                 ;# energy model
+set val(energy_init)      5                           ;# init val for energy
+set val(tx_power)         0.33                        ;# energy consume for transmiting packet
+set val(rx_power)         0.1                         ;# energy consume for receiving packet
+set val(idle_power)       0.05                        ;# energy consume for idle
+set val(sleep_power)      0.03                        ;# energy consume for sleep mode
 
 # =====================================================================
 # Main Program
 # ======================================================================
 # Initialize Global Variables
 # create simulator instance
+
 set ns_		[new Simulator]
 
 # setup topography object
 set topo	[new Topography]
 
+# Output file
 # create trace object for ns and nam
-set tracefd     [open result.tr w]
-set namtrace    [open result.nam w]
+set tracefd     [open result/aomdv-result.tr w] 
+set namtrace    [open result/aomdv-result.nam w]
 
 $ns_ trace-all $tracefd
 $ns_ namtrace-all-wireless $namtrace $opt(x) $opt(y)
@@ -132,11 +136,14 @@ Phy/WirelessPhy set	CSThresh_ 5.57189e-11 ; #400m capture threshold  range
 #     $node_($i) color black; #whatever you fill as long as color
 # }
 
+# ------------------------------------------------------------------------------
+# Nodes definition
+# ------------------------------------------------------------------------------
+;#  Create the specified number of nodes [$val(n)] and "attach" them to the channel.
 for {set i 0} {$i < $val(nn)} {incr i} {
-    set node_($i) [$ns_ node]
-    $node_($i) random-motion 0 ;# disable random motion
+  set node_($i) [$ns_ node]
+  $node_($i) random-motion 0 ;# disable random motion
 }
-
 
 # Define node movement model
 puts "Loading connection pattern..."
