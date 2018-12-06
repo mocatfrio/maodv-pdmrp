@@ -96,6 +96,9 @@ The AODV code developed by the CMU/MONARCH group was optimized and tuned by Sami
 // AODV ns-2.31 code
 #include <classifier/classifier-port.h>
 
+// Modifikasi - menambah header untuk manet dan energi
+#include <mobilenode.h> 
+
 // AOMDV code
 #define AOMDV_PACKET_SALVAGING
 #define AOMDV_MAX_SALVAGE_COUNT  10
@@ -136,16 +139,16 @@ The AODV code developed by the CMU/MONARCH group was optimized and tuned by Sami
 
 class AOMDV;
 
-#define MY_ROUTE_TIMEOUT        10                       // 100 seconds
-#define ACTIVE_ROUTE_TIMEOUT    10          // 50 seconds
-#define REV_ROUTE_LIFE          6            // 5  seconds
+#define MY_ROUTE_TIMEOUT  10           // 100 seconds
+#define ACTIVE_ROUTE_TIMEOUT    10    // 50 seconds
+#define REV_ROUTE_LIFE    6      // 5  seconds
 // AODV ns-2.31 code
-#define BCAST_ID_SAVE           6            // 3 seconds
+#define BCAST_ID_SAVE     6      // 3 seconds
 
 
 // No. of times to do network-wide search before timing out for 
 // MAX_RREQ_TIMEOUT sec. 
-#define RREQ_RETRIES            3  
+#define RREQ_RETRIES      3  
 // timeout after doing network-wide search RREQ_RETRIES times
 #define MAX_RREQ_TIMEOUT   1.0 //sec
 
@@ -158,39 +161,39 @@ class AOMDV;
 #define TTL_START     		30
 #define TTL_INCREMENT 		30
 #endif // NO EXPANDING RING SEARCH
-#define TTL_THRESHOLD 7
+#define TTL_THRESHOLD     7
 
 // Should be set by the user using best guess (conservative) 
-#define NETWORK_DIAMETER        30             // 30 hops
+#define NETWORK_DIAMETER  30       // 30 hops
 
 // Must be larger than the time difference between a node propagates a route 
 // request and gets the route reply back.
 
 //#define RREP_WAIT_TIME     (3 * NODE_TRAVERSAL_TIME * NETWORK_DIAMETER) // ms
 //#define RREP_WAIT_TIME     (2 * REV_ROUTE_LIFE)  // seconds
-#define RREP_WAIT_TIME         1.0  // sec
+#define RREP_WAIT_TIME   1.0  // sec
 
 #define ID_NOT_FOUND    0x00
-#define ID_FOUND        0x01
-//#define INFINITY        0xff
+#define ID_FOUND  0x01
+//#define INFINITY  0xff
 
 // The followings are used for the forward() function. Controls pacing.
-#define AOMDV_DELAY 1.0           // random delay
+#define AOMDV_DELAY 1.0     // random delay
 #define NO_AOMDV_DELAY -1.0       // no delay 
 
 // think it should be 30 ms
 #define ARP_DELAY 0.01      // fixed delay to keep arp happy
 
 
-#define HELLO_INTERVAL          1               // 1000 ms
-#define ALLOWED_HELLO_LOSS      3               // packets
-#define BAD_LINK_LIFETIME       3               // 3000 ms
-#define MaxHelloInterval        (1.25 * HELLO_INTERVAL)
-#define MinHelloInterval        (0.75 * HELLO_INTERVAL)
+#define HELLO_INTERVAL    1         // 1000 ms
+#define ALLOWED_HELLO_LOSS      3         // packets
+#define BAD_LINK_LIFETIME       3         // 3000 ms
+#define MaxHelloInterval  (1.25 * HELLO_INTERVAL)
+#define MinHelloInterval  (0.75 * HELLO_INTERVAL)
 
 // AOMDV code - Could it be removev?
 // This should be somewhat related to arp timeout
-#define NODE_TRAVERSAL_TIME     0.03             // 30 ms
+#define NODE_TRAVERSAL_TIME     0.03       // 30 ms
 #define LOCAL_REPAIR_WAIT_TIME  0.15 //sec
 
 
@@ -200,47 +203,47 @@ class AOMDV;
 */
 class AOMDVBroadcastTimer : public Handler {
 public:
-        AOMDVBroadcastTimer(AOMDV* a) : agent(a) {}
-        void   handle(Event*);
+  AOMDVBroadcastTimer(AOMDV* a) : agent(a) {}
+  void   handle(Event*);
 private:
-        AOMDV    *agent;
-   Event intr;
+  AOMDV   *agent;
+  Event   intr;
 };
 
 class AOMDVHelloTimer : public Handler {
 public:
-        AOMDVHelloTimer(AOMDV* a) : agent(a) {}
-        void   handle(Event*);
+  AOMDVHelloTimer(AOMDV* a) : agent(a) {}
+  void   handle(Event*);
 private:
-        AOMDV    *agent;
-   Event intr;
+  AOMDV   *agent;
+  Event   intr;
 };
 
 class AOMDVNeighborTimer : public Handler {
 public:
-        AOMDVNeighborTimer(AOMDV* a) : agent(a) {}
-        void   handle(Event*);
+  AOMDVNeighborTimer(AOMDV* a) : agent(a) {}
+  void   handle(Event*);
 private:
-        AOMDV    *agent;
-   Event intr;
+  AOMDV   *agent;
+  Event   intr;
 };
 
 class AOMDVRouteCacheTimer : public Handler {
 public:
-        AOMDVRouteCacheTimer(AOMDV* a) : agent(a) {}
-        void   handle(Event*);
+  AOMDVRouteCacheTimer(AOMDV* a) : agent(a) {}
+  void   handle(Event*);
 private:
-        AOMDV    *agent;
-   Event intr;
+  AOMDV  *agent;
+  Event  intr;
 };
 
 class AOMDVLocalRepairTimer : public Handler {
 public:
-        AOMDVLocalRepairTimer(AOMDV* a) : agent(a) {}
-        void   handle(Event*);
+  AOMDVLocalRepairTimer(AOMDV* a) : agent(a) {}
+  void   handle(Event*);
 private:
-        AOMDV    *agent;
-   Event intr;
+  AOMDV   *agent;
+  Event   intr;
 };
 
 // AOMDV code
@@ -248,81 +251,82 @@ private:
   Route List
 */
 class AOMDV_Route {
-        friend class AOMDVBroadcastID;
+  friend class AOMDVBroadcastID;
  public:
-        AOMDV_Route(nsaddr_t nexthop, nsaddr_t lasthop=0) {
+  AOMDV_Route(nsaddr_t nexthop, nsaddr_t lasthop=0) {
 				nh_addr = nexthop;
 				lh_addr = lasthop;
 		  }
 	protected:
 	LIST_ENTRY(AOMDV_Route) route_link;
-        nsaddr_t        nh_addr;
-        nsaddr_t        lh_addr;
+  nsaddr_t  nh_addr;
+  nsaddr_t  lh_addr;
 };
 
 LIST_HEAD(aomdv_routes, AOMDV_Route);
-
 
 /*
   Broadcast ID Cache
 */
 class AOMDVBroadcastID {
-        friend class AOMDV;
- public:
-        AOMDVBroadcastID(nsaddr_t i, u_int32_t b) { 
-				src = i; 
-				id = b;  
-				// AOMDV code
-				count=0;  
-				LIST_INIT(&reverse_path_list);
-				LIST_INIT(&forward_path_list);
-        }
+  friend class AOMDV;
+
+public:
+  AOMDVBroadcastID(nsaddr_t i, u_int32_t b) { 
+    src = i; 
+    id = b;  
+    // AOMDV code
+    count=0;  
+    LIST_INIT(&reverse_path_list);
+    LIST_INIT(&forward_path_list);
+  }
+
 protected:
-        LIST_ENTRY(AOMDVBroadcastID) link;
-        nsaddr_t        src;
-        u_int32_t       id;
-        double          expire;         // now + BCAST_ID_SAVE s
-        
-			// AOMDV code
-        int					count;
-        aomdv_routes     reverse_path_list;     // List of reverse paths used for forwarding replies
-        aomdv_routes     forward_path_list;     // List of forward paths advertised already
+  LIST_ENTRY(AOMDVBroadcastID)  link;
+  nsaddr_t                      src;
+  u_int32_t                     id;
+  double                        expire;   // now + BCAST_ID_SAVE s
+  
+  // AOMDV code
+  int					  count;
+  aomdv_routes  reverse_path_list;     // List of reverse paths used for forwarding replies
+  aomdv_routes  forward_path_list;     // List of forward paths advertised already
 
-        inline AOMDV_Route* reverse_path_insert(nsaddr_t nexthop, nsaddr_t lasthop=0) {
-			  AOMDV_Route* route = new AOMDV_Route(nexthop, lasthop);
-			  assert(route);
-			  LIST_INSERT_HEAD(&reverse_path_list, route, route_link);
-			  return route;
-        }
+  inline AOMDV_Route* reverse_path_insert(nsaddr_t nexthop, nsaddr_t lasthop=0) {
+    AOMDV_Route* route = new AOMDV_Route(nexthop, lasthop);
+    assert(route);
+    LIST_INSERT_HEAD(&reverse_path_list, route, route_link);
+    return route;
+  }
 
-        inline AOMDV_Route* reverse_path_lookup(nsaddr_t nexthop, nsaddr_t lasthop=0) {
-			  AOMDV_Route *route = reverse_path_list.lh_first;
+  inline AOMDV_Route* reverse_path_lookup(nsaddr_t nexthop, nsaddr_t lasthop=0) {
+    AOMDV_Route *route = reverse_path_list.lh_first;
 
-			  // Search the list for a match of id
-			  for( ; route; route = route->route_link.le_next) {
-					if ( (route->nh_addr == nexthop) && (route->lh_addr == lasthop) )
-						return route;     
-					}
-				return NULL;
-				}
-		  
-			inline AOMDV_Route* forward_path_insert(nsaddr_t nexthop, nsaddr_t lasthop=0) {
-				AOMDV_Route* route = new AOMDV_Route(nexthop, lasthop);
-				assert(route);
-				LIST_INSERT_HEAD(&forward_path_list, route, route_link);
-				return route;
-			}
+    // Search the list for a match of id
+    for( ; route; route = route->route_link.le_next) {
+      if ( (route->nh_addr == nexthop) && (route->lh_addr == lasthop) )
+        return route;     
+      }
+    return NULL;
+    }
+  
+  inline AOMDV_Route* forward_path_insert(nsaddr_t nexthop, nsaddr_t lasthop=0) {
+    AOMDV_Route* route = new AOMDV_Route(nexthop, lasthop);
+    assert(route);
+    LIST_INSERT_HEAD(&forward_path_list, route, route_link);
+    return route;
+  }
 
-			inline AOMDV_Route* forward_path_lookup(nsaddr_t nexthop, nsaddr_t lasthop=0) {
-				AOMDV_Route *route = forward_path_list.lh_first;
+  inline AOMDV_Route* forward_path_lookup(nsaddr_t nexthop, nsaddr_t lasthop=0) {
+    AOMDV_Route *route = forward_path_list.lh_first;
 
-				// Search the list for a match of id
-				for( ; route; route = route->route_link.le_next) {
-					if ( (route->nh_addr == nexthop) &&	(route->lh_addr == lasthop) ) 
-						return route;     
-				}
-				return NULL;
-			}
+    // Search the list for a match of id
+    for( ; route; route = route->route_link.le_next) {
+      if ( (route->nh_addr == nexthop) &&	(route->lh_addr == lasthop) ) 
+        return route;     
+    }
+    return NULL;
+  }
 };
 
 LIST_HEAD(aomdv_bcache, AOMDVBroadcastID);
@@ -337,143 +341,149 @@ class AOMDV: public Agent {
    * make some friends first 
    */
 
-        friend class aomdv_rt_entry;
-        friend class AOMDVBroadcastTimer;
-        friend class AOMDVHelloTimer;
-        friend class AOMDVNeighborTimer;
-        friend class AOMDVRouteCacheTimer;
-        friend class AOMDVLocalRepairTimer;
+  friend class aomdv_rt_entry;
+  friend class AOMDVBroadcastTimer;
+  friend class AOMDVHelloTimer;
+  friend class AOMDVNeighborTimer;
+  friend class AOMDVRouteCacheTimer;
+  friend class AOMDVLocalRepairTimer;
 
- public:
-        AOMDV(nsaddr_t id);
+public:
+  AOMDV(nsaddr_t id);
+  void recv(Packet *p, Handler *);
 
-        void      recv(Packet *p, Handler *);
+protected:
+  int command(int, const char *const *);
+  int initialized() { return 1 && target_; }
 
- protected:
-        int             command(int, const char *const *);
-        int             initialized() { return 1 && target_; }
+  /*
+   * Route Table Management
+   */
+  void rt_resolve(Packet *p);
+  void rt_down(aomdv_rt_entry *rt);
+  void local_rt_repair(aomdv_rt_entry *rt, Packet *p);
 
-        /*
-         * Route Table Management
-         */
-        void            rt_resolve(Packet *p);
-        void            rt_down(aomdv_rt_entry *rt);
-        void            local_rt_repair(aomdv_rt_entry *rt, Packet *p);
- public:
-        void            rt_ll_failed(Packet *p);
-			// AOMDV code
-			// void            rt_update(aodv_rt_entry *rt, u_int32_t seqnum, u_int16_t metric, nsaddr_t nexthop, double expire_time);
-			// void            handle_link_failure(nsaddr_t id);
-        void            handle_link_failure(nsaddr_t id);
- protected:
-        void            rt_purge(void);
+public:
+  void rt_ll_failed(Packet *p);
+  // AOMDV code
+  // void rt_update(aodv_rt_entry *rt, u_int32_t seqnum, u_int16_t metric, nsaddr_t nexthop, double expire_time);
+  // void handle_link_failure(nsaddr_t id);
+  void handle_link_failure(nsaddr_t id);
 
-        void            enque(aomdv_rt_entry *rt, Packet *p);
-        Packet*         deque(aomdv_rt_entry *rt);
+protected:
+  void rt_purge(void);
 
-        /*
-         * Neighbor Management
-         */
-        void            nb_insert(nsaddr_t id);
-        AOMDV_Neighbor*       nb_lookup(nsaddr_t id);
-        void            nb_delete(nsaddr_t id);
-        void            nb_purge(void);
+  void enque(aomdv_rt_entry *rt, Packet *p);
+  Packet* deque(aomdv_rt_entry *rt);
 
-        /*
-         * Broadcast ID Management
-         */
+  /*
+   * Neighbor Management
+   */
+  void nb_insert(nsaddr_t id);
+  AOMDV_Neighbor* nb_lookup(nsaddr_t id);
+  void nb_delete(nsaddr_t id);
+  void nb_purge(void);
 
-			// AODV ns-2.31 code
-			void            id_insert(nsaddr_t id, u_int32_t bid);
-			bool	        id_lookup(nsaddr_t id, u_int32_t bid);
-         AOMDVBroadcastID*    id_get(nsaddr_t id, u_int32_t bid);
-        void            id_purge(void);
+  /*
+   * Broadcast ID Management
+   */
 
-        /*
-         * Packet TX Routines
-         */
-        void            forward(aomdv_rt_entry *rt, Packet *p, double delay);
-			// AOMDV code - should it be removed?
-        void            forwardReply(aomdv_rt_entry *rt, Packet *p, double delay);
-        void            sendHello(void);
-        void            sendRequest(nsaddr_t dst);
+  // AODV ns-2.31 code
+  void id_insert(nsaddr_t id, u_int32_t bid);
+  bool id_lookup(nsaddr_t id, u_int32_t bid);
+  AOMDVBroadcastID* id_get(nsaddr_t id, u_int32_t bid);
+  void id_purge(void);
 
-			// AOMDV code
-			// void            sendReply(nsaddr_t ipdst, u_int32_t hop_count, nsaddr_t rpdst, u_int32_t rpseq, u_int32_t lifetime, double timestamp);
-        void            sendReply(nsaddr_t ipdst, u_int32_t hop_count,
-                                  nsaddr_t rpdst, u_int32_t rpseq,
-                                  double lifetime, double timestamp,
-              nsaddr_t nexthop, u_int32_t bcast_id, nsaddr_t rp_first_hop);
-        void            sendError(Packet *p, bool jitter = true);
-                                          
-        /*
-         * Packet RX Routines
-         */
-        void            recvAOMDV(Packet *p);
-        void            recvHello(Packet *p);
-        void            recvRequest(Packet *p);
-        void            recvReply(Packet *p);
-        void            recvError(Packet *p);
+  /*
+   * Packet TX Routines
+   */
+  void forward(aomdv_rt_entry *rt, Packet *p, double delay);
+  // AOMDV code - should it be removed?
+  void forwardReply(aomdv_rt_entry *rt, Packet *p, double delay);
+  void sendHello(void);
+  void sendRequest(nsaddr_t dst);
+
+  // AOMDV code
+  // void      sendReply(nsaddr_t ipdst, u_int32_t hop_count, nsaddr_t rpdst, u_int32_t rpseq, u_int32_t lifetime, double timestamp);
+  void sendReply(nsaddr_t ipdst, u_int32_t hop_count, nsaddr_t rpdst, u_int32_t rpseq, double lifetime, double timestamp, nsaddr_t nexthop, u_int32_t bcast_id, nsaddr_t rp_first_hop);
+  void sendError(Packet *p, bool jitter = true);
+            
+  /*
+   * Packet RX Routines
+   */
+  void recvAOMDV(Packet *p);
+  void recvHello(Packet *p);
+  void recvRequest(Packet *p);
+  void recvReply(Packet *p);
+  void recvError(Packet *p);
 
    /*
     * History management
     */
    
-   double      PerHopTime(aomdv_rt_entry *rt);
+  double  PerHopTime(aomdv_rt_entry *rt);
 
 
-        nsaddr_t        index;                  // IP Address of this node
-        u_int32_t       seqno;                  // Sequence Number
-        int             bid;                    // Broadcast ID
+  nsaddr_t  index;      // IP Address of this node
+  u_int32_t seqno;      // Sequence Number
+  int       bid;        // Broadcast ID
 
-        aomdv_rtable         rthead;                 // routing table
-        aomdv_ncache         nbhead;                 // Neighbor Cache
-        aomdv_bcache          bihead;                 // Broadcast ID Cache
+  aomdv_rtable   rthead;     // routing table
+  aomdv_ncache   nbhead;     // Neighbor Cache
+  aomdv_bcache   bihead;     // Broadcast ID Cache
 
-        /*
-         * Timers
-         */
-        AOMDVBroadcastTimer  btimer;
-        AOMDVHelloTimer      htimer;
-        AOMDVNeighborTimer   ntimer;
-        AOMDVRouteCacheTimer rtimer;
-        AOMDVLocalRepairTimer lrtimer;
+  /*
+   * Timers
+   */
+  AOMDVBroadcastTimer  btimer;
+  AOMDVHelloTimer      htimer;
+  AOMDVNeighborTimer   ntimer;
+  AOMDVRouteCacheTimer rtimer;
+  AOMDVLocalRepairTimer lrtimer;
 
-        /*
-         * Routing Table
-         */
-        aomdv_rtable          rtable;
-        /*
-         *  A "drop-front" queue used by the routing layer to buffer
-         *  packets to which it does not have a route.
-         */
-        aomdv_rqueue         rqueue;
+  /*
+   * Routing Table
+   */
+  aomdv_rtable    rtable;
+  /*
+   *  A "drop-front" queue used by the routing layer to buffer
+   *  packets to which it does not have a route.
+   */
+  aomdv_rqueue   rqueue;
 
-        /*
-         * A mechanism for logging the contents of the routing
-         * table.
-         */
-        Trace           *logtarget;
+  /*
+   * A mechanism for logging the contents of the routing
+   * table.
+   */
+  Trace     *logtarget;
 
-        /*
-         * A pointer to the network interface queue that sits
-         * between the "classifier" and the "link layer".
-         */
-        PriQueue        *AOMDVifqueue;
+  /*
+   * A pointer to the network interface queue that sits
+   * between the "classifier" and the "link layer".
+   */
+  PriQueue  *AOMDVifqueue;
 
-        /*
-         * Logging stuff
-         */
-        void            log_link_del(nsaddr_t dst);
-        void            log_link_broke(Packet *p);
-        void            log_link_kept(nsaddr_t dst);
+  /*
+   * Logging stuff
+   */
+  void log_link_del(nsaddr_t dst);
+  void log_link_broke(Packet *p);
+  void log_link_kept(nsaddr_t dst);
 
-			// AOMDV code
-			int aomdv_max_paths_;
-			int aomdv_prim_alt_path_len_diff_;
-			// AODV ns-2.31 code
-			/*	for passing packets up to agents */
-			PortClassifier *dmux_;
+  /* Manet*/
+public: 
+  double      xpos; 
+  double      ypos; 
+  double      zpos; 
+  double      iEnergy; 
+  MobileNode   *iNode;
+
+  // AOMDV code
+  int aomdv_max_paths_;
+  int aomdv_prim_alt_path_len_diff_;
+  // AODV ns-2.31 code
+  /*	for passing packets up to agents */
+  PortClassifier *dmux_;
 };
 
 #endif /* __aomdv_h__ */

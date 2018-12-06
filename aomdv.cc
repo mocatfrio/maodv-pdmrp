@@ -86,6 +86,7 @@
 #include <aomdv/aomdv_packet.h>
 #include <random.h>
 #include <cmu-trace.h>
+#include <iostream>
 //#include <energy-model.h>
 
 #define max(a,b)        ( (a) > (b) ? (a) : (b) )
@@ -95,7 +96,7 @@
 #define DROP_RTR_RTEXPIRE               "REXP"
 #define DROP_RTR_HELLO                  "HELO"
 
-//#define DEBUG
+#define DEBUG
 //#define ERROR
 
 #ifdef DEBUG
@@ -103,7 +104,6 @@
 //static int limit_route_request = 0;
 static int route_request = 0;
 #endif
-
 
 /*
  TCL Hooks
@@ -121,7 +121,7 @@ public:
 
 static class AOMDVclass : public TclClass {
 public:
-	AOMDVclass() : TclClass("Agent/AOMDV") {}
+	AOMDVclass() : TclClass("Agent/AOMDV") {}	
 	TclObject* create(int argc, const char*const* argv) {
 		assert(argc == 5);
 		//return (new AODV((nsaddr_t) atoi(argv[4])));
@@ -130,8 +130,15 @@ public:
 } class_rtProtoAOMDV;
 
 
-int
-AOMDV::command(int argc, const char*const* argv) {
+int AOMDV::command(int argc, const char*const* argv) {
+	// Modifikasi - bikin file debug
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	if(argc == 2) {
 		Tcl& tcl = Tcl::instance();
 		
@@ -185,8 +192,11 @@ AOMDV::command(int argc, const char*const* argv) {
 		else if (strcmp(argv[1], "port-dmux") == 0) {
 			dmux_ = (PortClassifier *)TclObject::lookup(argv[2]);
 			if (dmux_ == 0) {
-				fprintf (stderr, "%s: %s lookup of %s failed\n", __FILE__,
-							argv[1], argv[2]);
+#ifdef DEBUG
+				fp = fopen("result/aomdv-debug.txt", "a");
+				fprintf (fp, "\n%.6f - %s: %s lookup of %s failed",  CURRENT_TIME, __FILE__, argv[1], argv[2]);
+				fclose(fp);
+#endif
 				return TCL_ERROR;
 			}
 			return TCL_OK;
@@ -199,10 +209,14 @@ AOMDV::command(int argc, const char*const* argv) {
 Constructor
  */
 
-AOMDV::AOMDV(nsaddr_t id) : Agent(PT_AOMDV),
-btimer(this), htimer(this), ntimer(this), 
-rtimer(this), lrtimer(this), rqueue() {
-	
+AOMDV::AOMDV(nsaddr_t id) : Agent(PT_AOMDV), btimer(this), htimer(this), ntimer(this), rtimer(this), lrtimer(this), rqueue() {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s constructor function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	// AOMDV code
 	aomdv_max_paths_ = 3;
 	bind("aomdv_max_paths_", &aomdv_max_paths_);
@@ -213,6 +227,13 @@ rtimer(this), lrtimer(this), rqueue() {
 	index = id;
 	seqno = 2;
 	bid = 1;
+
+	//init manet
+  xpos = 0.0; 
+  ypos = 0.0; 
+  zpos = 0.0; 
+  MobileNode *iNode; 
+  iEnergy = 1.0; 
 	
 	LIST_INIT(&nbhead);
 	LIST_INIT(&bihead);
@@ -225,14 +246,28 @@ rtimer(this), lrtimer(this), rqueue() {
  Timers
  */
 
-void
-AOMDVBroadcastTimer::handle(Event*) {
+// Broadcast Timer : Timer yang bertanggungjawab untuk membersihkan ID node dan dijadwalkan setelah setiap BCAST_ID_SAVE
+void AOMDVBroadcastTimer::handle(Event*) {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - Broadcast Timer %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	agent->id_purge();
 	Scheduler::instance().schedule(this, &intr, BCAST_ID_SAVE);
 }
 
-void
-AOMDVHelloTimer::handle(Event*) {
+// Hello Timer : Timer yang bertanggung jawab untuk mengirim Hello Packet dengan nilai tunda = interval
+void AOMDVHelloTimer::handle(Event*) {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - Hello Timer %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	// AOMDV code - could it be removed?
 	// agent->sendHello();
 	/* Do not send a HELLO message unless we have a valid route entry. */
@@ -245,21 +280,39 @@ AOMDVHelloTimer::handle(Event*) {
 	Scheduler::instance().schedule(this, &intr, interval);
 }
 
-void
-AOMDVNeighborTimer::handle(Event*) {
+void AOMDVNeighborTimer::handle(Event*) {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - Neighbor Timer %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	agent->nb_purge();
 	Scheduler::instance().schedule(this, &intr, HELLO_INTERVAL);
 }
 
-void
-AOMDVRouteCacheTimer::handle(Event*) {
+void AOMDVRouteCacheTimer::handle(Event*) {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - Route Cache Timer %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	agent->rt_purge();	
 #define FREQUENCY 0.5 // sec
 	Scheduler::instance().schedule(this, &intr, FREQUENCY);
 }
 
-void
-AOMDVLocalRepairTimer::handle(Event* p)  {  // SRD: 5/4/99
+void AOMDVLocalRepairTimer::handle(Event* p)  {  // SRD: 5/4/99
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - Local Repair Timer %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	aomdv_rt_entry *rt;
 	struct hdr_ip *ih = HDR_IP( (Packet *)p);
 	
@@ -279,9 +332,11 @@ AOMDVLocalRepairTimer::handle(Event* p)  {  // SRD: 5/4/99
 		//rt->rt_seqno++;
 		agent->rt_down(rt);
 		// send RERR
-#ifdef DEBUG
-//		fprintf(stderr,"Node %d: Dst - %d, failed local repair\n",index, rt->rt_dst);
-#endif      
+// #ifdef DEBUG
+// 	fp = fopen("result/aomdv-debug.txt", "a");
+// 	fprintf(fp, "\n%.6f - node destination %d, failed local repair",  CURRENT_TIME, rt->rt_dst);
+// 	fclose(fp);
+// #endif       
 	}
 	Packet::free((Packet *)p);
 }
@@ -293,8 +348,14 @@ AOMDVLocalRepairTimer::handle(Event* p)  {  // SRD: 5/4/99
 
 
 // AODV ns-2.31 code
-void
-AOMDV::id_insert(nsaddr_t id, u_int32_t bid) {
+void AOMDV::id_insert(nsaddr_t id, u_int32_t bid) {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function : Node %d add node %d",  CURRENT_TIME, __FUNCTION__, index, id);
+	fclose(fp);
+#endif
+
 	AOMDVBroadcastID *b = new AOMDVBroadcastID(id, bid);
 	
 	assert(b);
@@ -304,8 +365,14 @@ AOMDV::id_insert(nsaddr_t id, u_int32_t bid) {
 
 // AODV ns-2.31 code
 /* SRD */
-bool
-AOMDV::id_lookup(nsaddr_t id, u_int32_t bid) {
+bool AOMDV::id_lookup(nsaddr_t id, u_int32_t bid) {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function : Node %d lookup node %d",  CURRENT_TIME, __FUNCTION__, index, id);
+	fclose(fp);
+#endif
+
 	AOMDVBroadcastID *b = bihead.lh_first;
 	
 	// Search the list for a match of source and bid
@@ -317,8 +384,7 @@ AOMDV::id_lookup(nsaddr_t id, u_int32_t bid) {
 }
 
 // AOMDV ns-2.31 code
-AOMDVBroadcastID*
-AOMDV::id_get(nsaddr_t id, u_int32_t bid) {
+AOMDVBroadcastID* AOMDV::id_get(nsaddr_t id, u_int32_t bid) {
 	AOMDVBroadcastID *b = bihead.lh_first;
 	
 	// Search the list for a match of source and bid
@@ -329,8 +395,14 @@ AOMDV::id_get(nsaddr_t id, u_int32_t bid) {
 	return NULL;
 }
 
-void
-AOMDV::id_purge() {
+void AOMDV::id_purge() {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	AOMDVBroadcastID *b = bihead.lh_first;
 	AOMDVBroadcastID *bn;
 	double now = CURRENT_TIME;
@@ -348,8 +420,14 @@ AOMDV::id_purge() {
  Helper Functions
  */
 
-double
-AOMDV::PerHopTime(aomdv_rt_entry *rt) {
+double AOMDV::PerHopTime(aomdv_rt_entry *rt) {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	int num_non_zero = 0, i;
 	double total_latency = 0.0;
 	
@@ -373,16 +451,28 @@ AOMDV::PerHopTime(aomdv_rt_entry *rt) {
  Link Failure Management Functions
  */
 
-static void
-aomdv_rt_failed_callback(Packet *p, void *arg) {
+static void aomdv_rt_failed_callback(Packet *p, void *arg) {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	((AOMDV*) arg)->rt_ll_failed(p);
 }
 
 /*
  * This routine is invoked when the link-layer reports a route failed.
  */
-void
-AOMDV::rt_ll_failed(Packet *p) {
+void AOMDV::rt_ll_failed(Packet *p) {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 // AOMDV ns-2.31 code
 #ifndef AOMDV_LINK_LAYER_DETECTION
 	drop(p, DROP_RTR_MAC_CALLBACK);
@@ -469,15 +559,25 @@ AOMDV::rt_ll_failed(Packet *p) {
 }
 
 // AOMDV code
-void
-AOMDV::handle_link_failure(nsaddr_t id) {
+void AOMDV::handle_link_failure(nsaddr_t id) {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	bool error=true;
 	aomdv_rt_entry *rt, *rtn;
 	Packet *rerr = Packet::alloc();
 	struct hdr_aomdv_error *re = HDR_AOMDV_ERROR(rerr);
+
 #ifdef DEBUG
-	fprintf(stderr, "%s: multipath version\n", __FUNCTION__);
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function : multipath version", CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
 #endif // DEBUG
+
 	re->DestCount = 0;
 	for(rt = rtable.head(); rt; rt = rtn) {  // for each rt entry
 		AOMDV_Path* path;
@@ -493,10 +593,12 @@ AOMDV::handle_link_failure(nsaddr_t id) {
 				if (rt->rt_error) {
 					re->unreachable_dst[re->DestCount] = rt->rt_dst;
 					re->unreachable_dst_seqno[re->DestCount] = rt->rt_seqno;
+
 #ifdef DEBUG
-					fprintf(stderr, "%s(%f): %d\t(%d\t%u\t%d)\n", __FUNCTION__, CURRENT_TIME,
-							  index, re->unreachable_dst[re->DestCount],
-							  re->unreachable_dst_seqno[re->DestCount], id);
+					fp = fopen("result/aomdv-debug.txt", "a");
+					fprintf(fp, "\n%.6f - %s function : %d\t(%d\t%u\t%d)", CURRENT_TIME, __FUNCTION__, index, re->unreachable_dst[re->DestCount], re->unreachable_dst_seqno[re->DestCount], id);
+					fclose(fp);
+
 #endif // DEBUG
 					re->DestCount += 1;
 					rt->rt_error = false;
@@ -509,7 +611,9 @@ AOMDV::handle_link_failure(nsaddr_t id) {
 	
 	if ( (re->DestCount > 0) && (error) ) {
 #ifdef DEBUG
-		fprintf(stdout, "%s(%f): %d\tsending RERR...\n", __FUNCTION__, CURRENT_TIME, index);
+		fp = fopen("result/aomdv-debug.txt", "a");
+		fprintf(fp, "\n%.6f - %s function : %d\tsending RERR...", CURRENT_TIME, __FUNCTION__, index);
+		fclose(fp);
 #endif // DEBUG
 		sendError(rerr, false);
 	}
@@ -518,11 +622,14 @@ AOMDV::handle_link_failure(nsaddr_t id) {
 	}
 }
 
-void
-AOMDV::local_rt_repair(aomdv_rt_entry *rt, Packet *p) {
+void AOMDV::local_rt_repair(aomdv_rt_entry *rt, Packet *p) {
 #ifdef DEBUG
-	fprintf(stderr,"%s: Dst - %d\n", __FUNCTION__, rt->rt_dst); 
-#endif  
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function : Node destination: %d",  CURRENT_TIME, __FUNCTION__, rt->rt_dst); 
+	fclose(fp);
+#endif
+
 	// Buffer the packet 
 	rqueue.enque(p);
 	
@@ -535,15 +642,17 @@ AOMDV::local_rt_repair(aomdv_rt_entry *rt, Packet *p) {
 	Scheduler::instance().schedule(&lrtimer, p->copy(), rt->rt_req_timeout);
 }
 
-void
-AOMDV::rt_down(aomdv_rt_entry *rt) {
+void AOMDV::rt_down(aomdv_rt_entry *rt) {
 	/*
 	 *  Make sure that you don't "down" a route more than once.
 	 */
 	
 	// AOMDV code
 #ifdef DEBUG
-	fprintf(stderr, "%s: multipath version\n", __FUNCTION__);
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function : multipath version", CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
 #endif // DEBUG
 	
 	if(rt->rt_flags == RTF_DOWN) {
@@ -564,8 +673,14 @@ AOMDV::rt_down(aomdv_rt_entry *rt) {
  Route Handling Functions
  */
 
-void
-AOMDV::rt_resolve(Packet *p) {
+void AOMDV::rt_resolve(Packet *p) {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	struct hdr_cmn *ch = HDR_CMN(p);
 	struct hdr_ip *ih = HDR_IP(p);
 	aomdv_rt_entry *rt;
@@ -631,8 +746,14 @@ AOMDV::rt_resolve(Packet *p) {
 	
 }
 
-void
-AOMDV::rt_purge() {
+void AOMDV::rt_purge() {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	aomdv_rt_entry *rt, *rtn;
 	double now = CURRENT_TIME;
 	double delay = 0.0;
@@ -684,8 +805,14 @@ AOMDV::rt_purge() {
  Packet Reception Routines
  */
 
-void
-AOMDV::recv(Packet *p, Handler*) {
+void AOMDV::recv(Packet *p, Handler*) {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	struct hdr_cmn *ch = HDR_CMN(p);
 	struct hdr_ip *ih = HDR_IP(p);
 	
@@ -742,8 +869,14 @@ AOMDV::recv(Packet *p, Handler*) {
 }
 
 
-void
-AOMDV::recvAOMDV(Packet *p) {
+void AOMDV::recvAOMDV(Packet *p) {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	struct hdr_aomdv *ah = HDR_AOMDV(p);
 	// AODV ns-2.31 code
 	// struct hdr_ip *ih = HDR_IP(p);
@@ -780,14 +913,37 @@ AOMDV::recvAOMDV(Packet *p) {
 
 
 // AOMDV
-void
-AOMDV::recvRequest(Packet *p) {
+void AOMDV::recvRequest(Packet *p) {
 	struct hdr_ip *ih = HDR_IP(p);
 	struct hdr_aomdv_request *rq = HDR_AOMDV_REQUEST(p);
 	aomdv_rt_entry *rt;
 	AOMDVBroadcastID* b = NULL;
 	bool kill_request_propagation = false;
 	AOMDV_Path* reverse_path = NULL;
+
+	//modifikasi
+  iNode =    (MobileNode *) (Node::get_node_by_address (index) ); 
+  xpos =     iNode->X(); 
+  ypos =     iNode->Y(); 
+  iEnergy =  iNode->energy_model()->energy();
+
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s: in node %d with energy %.4f, packet from node %d to node destination %d rq_lifetime %.4f",  CURRENT_TIME, __FUNCTION__, index, iEnergy, rq->rq_src, rq->rq_dst, rq->rq_min_life);
+	fclose(fp);   
+#endif // DEBUG
+
+	if (rq->rq_min_life > iEnergy && iEnergy > 0){
+#ifdef DEBUG
+		FILE *fp;
+		fp = fopen("result/aomdv-debug.txt", "a");
+		fprintf(fp, "\n%.6f - updating rq_min_life from %.4f to %.4f", CURRENT_TIME, rq->rq_min_life, iEnergy);
+		fclose(fp);   
+#endif // DEBUG
+  	
+		rq->rq_min_life=  iEnergy;
+  }
 	
 	/*
 	 * Drop if:
@@ -797,24 +953,26 @@ AOMDV::recvRequest(Packet *p) {
 	
 	if(rq->rq_src == index) {
 #ifdef DEBUG
-		fprintf(stderr, "%s: got my own REQUEST\n", __FUNCTION__);
+		fp = fopen("result/aomdv-debug.txt", "a");
+		fprintf(fp, "\n%.6f - %s function : got my own REQUEST", CURRENT_TIME, __FUNCTION__);
+		fclose(fp);   
 #endif // DEBUG
 		Packet::free(p);
 		return;
 	} 
 	
 
-   /* If RREQ has already been received - drop it, else remember "RREQ id" <src IP, bcast ID>. */
-   if ( (b = id_get(rq->rq_src, rq->rq_bcast_id)) == NULL)  {
+	/* If RREQ has already been received - drop it, else remember "RREQ id" <src IP, bcast ID>. */
+	if ( (b = id_get(rq->rq_src, rq->rq_bcast_id)) == NULL)  {
 		// Cache the broadcast ID
 		id_insert(rq->rq_src, rq->rq_bcast_id);
 		b = id_get(rq->rq_src, rq->rq_bcast_id);
-   }
-   else 
+	}
+	else 
 		kill_request_propagation = true;
 	
-   /* If I am a neighbor to the RREQ source, make myself first hop on path from source to dest. */
-   if (rq->rq_hop_count == 0) 
+	/* If I am a neighbor to the RREQ source, make myself first hop on path from source to dest. */
+	if (rq->rq_hop_count == 0) 
 		rq->rq_first_hop = index;
 	
 	/* 
@@ -824,11 +982,11 @@ AOMDV::recvRequest(Packet *p) {
 	 */
 	aomdv_rt_entry *rt0; // rt0 is the reverse route 
    
-   rt0 = rtable.rt_lookup(rq->rq_src);
-   if(rt0 == 0) { /* if not in the route table */
+	rt0 = rtable.rt_lookup(rq->rq_src);
+	if(rt0 == 0) { /* if not in the route table */
 		// create an entry for the reverse route.
 		rt0 = rtable.rt_add(rq->rq_src);
-   }
+	}
 
 	/*
 	 * Create/update reverse path (i.e. path back to RREQ source)
@@ -929,6 +1087,12 @@ AOMDV::recvRequest(Packet *p) {
 
 	/* I am the intended receiver of the RREQ - so send a RREP */ 
 	if (rq->rq_dst == index) {
+	#ifdef DEBUG
+    // FILE *fp;
+    fp = fopen("result/aomdv-debug.txt", "a");
+    fprintf(fp, "\n%.6f - %s function : node %d - destination sending reply", CURRENT_TIME, __FUNCTION__, index);
+    fclose(fp);
+  #endif // DEBUG
 		
 		if (seqno < rq->rq_dst_seqno) {
 			//seqno = max(seqno, rq->rq_dst_seqno)+1;
@@ -1054,8 +1218,7 @@ AOMDV::recvRequest(Packet *p) {
 }
 
 // AOMDV
-void
-AOMDV::recvReply(Packet *p) {	
+void AOMDV::recvReply(Packet *p) {	
 	struct hdr_cmn *ch = HDR_CMN(p);
 	struct hdr_ip *ih = HDR_IP(p);
 	struct hdr_aomdv_reply *rp = HDR_AOMDV_REPLY(p);
@@ -1064,9 +1227,11 @@ AOMDV::recvReply(Packet *p) {
 	AOMDV_Path* forward_path = NULL;
 	
 #ifdef DEBUG
-	fprintf(stderr, "%d - %s: received a REPLY\n", index, __FUNCTION__);
-#endif // DEBUG
-	
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function : node %d - received a REPLY",  CURRENT_TIME, __FUNCTION__, index);
+	fclose(fp);
+#endif
 	
    /* If I receive a RREP with myself as source - drop packet (should not occur).
 Comment: rp_dst is the source of the RREP, or rather the destination of the RREQ. */
@@ -1269,11 +1434,14 @@ Comment: rp_dst is the source of the RREP, or rather the destination of the RREQ
 }
 
 // AOMDV code
-void
-AOMDV::recvError(Packet *p) {
+void AOMDV::recvError(Packet *p) {
 #ifdef DEBUG
-	fprintf(stderr, "%s: node=%d\n", __FUNCTION__, index);
-#endif // DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function : node = %d",  CURRENT_TIME, __FUNCTION__, index);
+	fclose(fp);
+#endif
+
 	struct hdr_ip *ih = HDR_IP(p);
 	struct hdr_aomdv_error *re = HDR_AOMDV_ERROR(p);
 	aomdv_rt_entry *rt;
@@ -1282,7 +1450,9 @@ AOMDV::recvError(Packet *p) {
 	struct hdr_aomdv_error *nre = HDR_AOMDV_ERROR(rerr);
 	
 #ifdef DEBUG
-	fprintf(stderr, "%s: multipath version\n", __FUNCTION__);
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "%s function : multipath version", __FUNCTION__);
+	fclose(fp);
 #endif // DEBUG
 	
 	nre->DestCount = 0;
@@ -1342,15 +1512,39 @@ AOMDV::recvError(Packet *p) {
  Packet Transmission Routines
  */
 
-void
-AOMDV::forward(aomdv_rt_entry *rt, Packet *p, double delay) {
+void AOMDV::forward(aomdv_rt_entry *rt, Packet *p, double delay) {
+#ifdef DEBUG
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function",  CURRENT_TIME, __FUNCTION__);
+	fclose(fp);
+#endif
+
 	struct hdr_cmn *ch = HDR_CMN(p);
 	struct hdr_ip *ih = HDR_IP(p);
+	
+#ifdef DEBUG && index > 0
+    // manet
+    iNode=    (MobileNode *) (Node::get_node_by_address (index) ); 
+    xpos=     iNode->X(); 
+    ypos=     iNode->Y(); 
+    iEnergy=  iNode->energy_model()->energy();
+    fp = fopen("result/aomdv-debug.txt", "a");
+    fprintf(fp, "\n%.6f - Position of node %d is X = %.4f and Y =%.4f",CURRENT_TIME, index, xpos, ypos); 
+    fprintf(fp, "\n%.6f - Updated Energy for node %d is Energy %.4f",CURRENT_TIME, index, iEnergy); 
+    fclose(fp);
+    // fprintf(fp, "\n%.6f - Routing agent is initialized for node %d", CURRENT_TIME, index); 
+    // fprintf(fp, "\n%.6f - Destination, NextHop, Hop, Seqno, expire, flag");
+    // fprintf(fp, "\n%.6f - NODE: %i %i %i %i %i %.4lf %d", CURRENT_TIME, rt->rt_dst, rt->rt_nexthop, rt->rt_hops, rt->rt_seqno, rt->rt_expire, rt->rt_flags);
+    // fprintf(fp, "\n%.6f - NODE: %d %d %d %d %d %.4f %d", CURRENT_TIME, rt->rt_dst, rt->rt_nexthop, rt->rt_hops, rt->rt_seqno, rt->rt_expire, rt->rt_flags); 
+#endif
 	
 	if(ih->ttl_ == 0) {
 		
 #ifdef DEBUG
-		fprintf(stderr, "%s: calling drop()\n", __PRETTY_FUNCTION__);
+		fp = fopen("result/aomdv-debug.txt", "a");
+		fprintf(fp, "\n%.6f - %s function : calling drop()",  CURRENT_TIME, __FUNCTION__);
+		fclose(fp);
 #endif // DEBUG
 		
 		drop(p, DROP_RTR_TTL);
@@ -1409,8 +1603,7 @@ AOMDV::forward(aomdv_rt_entry *rt, Packet *p, double delay) {
 }
 
 
-void
-AOMDV::sendRequest(nsaddr_t dst) {
+void AOMDV::sendRequest(nsaddr_t dst) {
 	// Allocate a RREQ packet 
 	Packet *p = Packet::alloc();
 	struct hdr_cmn *ch = HDR_CMN(p);
@@ -1451,8 +1644,10 @@ AOMDV::sendRequest(nsaddr_t dst) {
 	}
 	
 #ifdef DEBUG
-   fprintf(stderr, "(%2d) - %2d sending Route Request, dst: %d\n",
-			  ++route_request, index, rt->rt_dst);
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - (%d) %s function : Node %d sending Route Request to node %d, tout %f ms", CURRENT_TIME, ++route_request, __FUNCTION__, index, rt->rt_dst, rt->rt_req_timeout - CURRENT_TIME);
+	fclose(fp);
 #endif // DEBUG
 	
 	// Determine the TTL to be used this time. 
@@ -1494,10 +1689,9 @@ AOMDV::sendRequest(nsaddr_t dst) {
 	rt->rt_expire = 0;
 	
 #ifdef DEBUG
-	fprintf(stderr, "(%2d) - %2d sending Route Request, dst: %d, tout %f ms\n",
-			  ++route_request, 
-			  index, rt->rt_dst, 
-			  rt->rt_req_timeout - CURRENT_TIME);
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - (%d) %s function : %d sending Route Request to node %d, tout %f ms", CURRENT_TIME, ++route_request, __FUNCTION__, index, rt->rt_dst, rt->rt_req_timeout - CURRENT_TIME);
+	fclose(fp);
 #endif	// DEBUG
 	
 	
@@ -1514,6 +1708,9 @@ AOMDV::sendRequest(nsaddr_t dst) {
 	ih->daddr() = IP_BROADCAST;
 	ih->sport() = RT_PORT;
 	ih->dport() = RT_PORT;
+
+	iNode=    (MobileNode *) (Node::get_node_by_address (index) ); 
+  iEnergy=  iNode->energy_model()->energy();
 	
 	// Fill up some more fields. 
 	rq->rq_type = AOMDVTYPE_RREQ;
@@ -1523,28 +1720,27 @@ AOMDV::sendRequest(nsaddr_t dst) {
 	rq->rq_dst = dst;
 	rq->rq_dst_seqno = (rt ? rt->rt_seqno : 0);
 	rq->rq_src = index;
+	rq->rq_min_life=  iEnergy;
 	seqno += 2;
 	assert ((seqno%2) == 0);
 	rq->rq_src_seqno = seqno;
 	rq->rq_timestamp = CURRENT_TIME;
 	
 	Scheduler::instance().schedule(target_, p, 0.);
-	
 }
 
 // AOMDV code
-void
-AOMDV::sendReply(nsaddr_t ipdst, u_int32_t hop_count, nsaddr_t rpdst,
-					  u_int32_t rpseq, double lifetime, double timestamp, 
-					  nsaddr_t nexthop, u_int32_t bcast_id, nsaddr_t rp_first_hop) {
+void AOMDV::sendReply(nsaddr_t ipdst, u_int32_t hop_count, nsaddr_t rpdst, u_int32_t rpseq, double lifetime, double timestamp, nsaddr_t nexthop, u_int32_t bcast_id, nsaddr_t rp_first_hop) {
 	Packet *p = Packet::alloc();
 	struct hdr_cmn *ch = HDR_CMN(p);
 	struct hdr_ip *ih = HDR_IP(p);
 	struct hdr_aomdv_reply *rp = HDR_AOMDV_REPLY(p);
-
 	
 #ifdef DEBUG
-	fprintf(stderr, "sending Reply from %d at %.2f\n", index, Scheduler::instance().clock());
+	FILE *fp;
+	fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function : Sending Reply from %d at %.2f", CURRENT_TIME, __FUNCTION__, index, Scheduler::instance().clock());
+	fclose(fp);
 #endif // DEBUG
 	
 	rp->rp_type = AOMDVTYPE_RREP;
@@ -1580,8 +1776,7 @@ AOMDV::sendReply(nsaddr_t ipdst, u_int32_t hop_count, nsaddr_t rpdst,
 	
 }
 
-void
-AOMDV::sendError(Packet *p, bool jitter) {
+void AOMDV::sendError(Packet *p, bool jitter) {
 #ifdef ERROR
 	fprintf(stderr, "%s: node=%d\n", __FUNCTION__, index);
 #endif // DEBUG
@@ -1626,15 +1821,17 @@ AOMDV::sendError(Packet *p, bool jitter) {
  Neighbor Management Functions
  */
 
-void
-AOMDV::sendHello() {
+void AOMDV::sendHello() {
 	Packet *p = Packet::alloc();
 	struct hdr_cmn *ch = HDR_CMN(p);
 	struct hdr_ip *ih = HDR_IP(p);
 	struct hdr_aomdv_reply *rh = HDR_AOMDV_REPLY(p);
 	
 #ifdef DEBUG
-	fprintf(stderr, "sending Hello from %d at %.2f\n", index, Scheduler::instance().clock());
+	FILE *fp;
+  fp = fopen("result/aomdv-debug.txt", "a");
+	fprintf(fp, "\n%.6f - %s function : Sending Hello from %d at %.2f", CURRENT_TIME, __FUNCTION__, index, Scheduler::instance().clock());
+	fclose(fp);
 #endif // DEBUG
 	
 	rh->rp_type = AOMDVTYPE_HELLO;
@@ -1663,8 +1860,7 @@ AOMDV::sendHello() {
 }
 
 
-void
-AOMDV::recvHello(Packet *p) {
+void AOMDV::recvHello(Packet *p) {
 	// AOMDV code
 	struct hdr_ip *ih = HDR_IP(p);
 	struct hdr_aomdv_reply *rp = HDR_AOMDV_REPLY(p);
@@ -1690,8 +1886,7 @@ AOMDV::recvHello(Packet *p) {
 }
 
 // AOMDV code
-void
-AOMDV::nb_insert(nsaddr_t id) {
+void AOMDV::nb_insert(nsaddr_t id) {
 	// CHANGE 
 	AOMDV_Neighbor *nb;
 	if ( ( nb=nb_lookup(id) ) == NULL) {
@@ -1709,8 +1904,7 @@ AOMDV::nb_insert(nsaddr_t id) {
 }
 
 
-AOMDV_Neighbor*
-AOMDV::nb_lookup(nsaddr_t id) {
+AOMDV_Neighbor* AOMDV::nb_lookup(nsaddr_t id) {
 	AOMDV_Neighbor *nb = nbhead.lh_first;
 	
 	for(; nb; nb = nb->nb_link.le_next) {
@@ -1724,8 +1918,7 @@ AOMDV::nb_lookup(nsaddr_t id) {
  * Called when we receive *explicit* notification that a Neighbor
  * is no longer reachable.
  */
-void
-AOMDV::nb_delete(nsaddr_t id) {
+void AOMDV::nb_delete(nsaddr_t id) {
 	AOMDV_Neighbor *nb = nbhead.lh_first;
 	
 	log_link_del(id);
@@ -1779,8 +1972,7 @@ AOMDV::nb_delete(nsaddr_t id) {
  * Purges all timed-out Neighbor Entries - runs every
  * HELLO_INTERVAL * 1.5 seconds.
  */
-void
-AOMDV::nb_purge() {
+void AOMDV::nb_purge() {
 	AOMDV_Neighbor *nb = nbhead.lh_first;
 	AOMDV_Neighbor *nbn;
 	double now = CURRENT_TIME;
@@ -1796,15 +1988,17 @@ AOMDV::nb_purge() {
 
 
 // AOMDV code
-void
-AOMDV::forwardReply(aomdv_rt_entry *rt, Packet *p, double delay) {
+void AOMDV::forwardReply(aomdv_rt_entry *rt, Packet *p, double delay) {
 	struct hdr_cmn *ch = HDR_CMN(p);
 	struct hdr_ip *ih = HDR_IP(p);
 	
 	if(ih->ttl_ == 0) {
 		
 #ifdef DEBUG
-		fprintf(stderr, "%s: calling drop()\n", __PRETTY_FUNCTION__);
+    FILE *fp;
+    fp = fopen("result/aomdv-debug.txt", "a");
+		fprintf(stderr, "\n%s: calling drop()", __PRETTY_FUNCTION__);
+		fclose(fp);
 #endif // DEBUG
 		
 		drop(p, DROP_RTR_TTL);

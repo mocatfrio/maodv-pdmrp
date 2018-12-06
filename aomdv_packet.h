@@ -110,10 +110,10 @@ The AODV code developed by the CMU/MONARCH group was optimized and tuned by Sami
  * General AOMDV Header - shared by all formats
  */
 struct hdr_aomdv {
-        u_int8_t        ah_type;
+  u_int8_t  ah_type;
 	/*
-        u_int8_t        ah_reserved[2];
-        u_int8_t        ah_hopcount;
+  u_int8_t  ah_reserved[2];
+  u_int8_t  ah_hopcount;
 	*/
 		// Header access methods
 	static int offset_; // required by PacketHeaderManager
@@ -124,20 +124,22 @@ struct hdr_aomdv {
 };
 
 struct hdr_aomdv_request {
-        u_int8_t        rq_type;	// Packet Type
-        u_int8_t        reserved[2];
-        u_int8_t        rq_hop_count;   // Hop Count
-        u_int32_t       rq_bcast_id;    // Broadcast ID
+  u_int8_t    rq_type;	      // Packet Type
+  u_int8_t    reserved[2];
+  u_int8_t    rq_hop_count;   // Hop Count
+  u_int32_t   rq_bcast_id;    // Broadcast ID
 
-        nsaddr_t        rq_dst;         // Destination IP Address
-        u_int32_t       rq_dst_seqno;   // Destination Sequence Number
-        nsaddr_t        rq_src;         // Source IP Address
-        u_int32_t       rq_src_seqno;   // Source Sequence Number
+  nsaddr_t    rq_dst;         // Destination IP Address
+  u_int32_t   rq_dst_seqno;   // Destination Sequence Number
+  nsaddr_t    rq_src;         // Source IP Address
+  u_int32_t   rq_src_seqno;   // Source Sequence Number
 
-        double          rq_timestamp;   // when REQUEST sent;
-					// used to compute route discovery latency
+  double    rq_timestamp;     // when REQUEST sent;
+					                    // used to compute route discovery latency
 // AOMDV code
-        nsaddr_t        rq_first_hop;  // First Hop taken by the RREQ
+  nsaddr_t  rq_first_hop;     // First Hop taken by the RREQ
+  // menambah variable header
+  double    rq_min_life;      // modif for check min life for each node
 
   // This define turns on gratuitous replies- see aodv.cc for implementation contributed by
   // Anant Utgikar, 09/16/02.
@@ -165,19 +167,19 @@ struct hdr_aomdv_request {
 };
 
 struct hdr_aomdv_reply {
-        u_int8_t        rp_type;        // Packet Type
-        u_int8_t        reserved[2];
-        u_int8_t        rp_hop_count;           // Hop Count
-        nsaddr_t        rp_dst;                 // Destination IP Address
-        u_int32_t       rp_dst_seqno;           // Destination Sequence Number
-        nsaddr_t        rp_src;                 // Source IP Address
-        double	         rp_lifetime;            // Lifetime
+  u_int8_t  rp_type;  // Packet Type
+  u_int8_t  reserved[2];
+  u_int8_t  rp_hop_count;     // Hop Count
+  nsaddr_t  rp_dst;     // Destination IP Address
+  u_int32_t       rp_dst_seqno;     // Destination Sequence Number
+  nsaddr_t  rp_src;     // Source IP Address
+  double	   rp_lifetime;      // Lifetime
 	
-        double          rp_timestamp;           // when corresponding REQ sent;
+  double    rp_timestamp;     // when corresponding REQ sent;
 						// used to compute route discovery latency
 // AOMDV code
-        u_int32_t       rp_bcast_id;           // Broadcast ID of the corresponding RREQ
-        nsaddr_t        rp_first_hop;
+  u_int32_t       rp_bcast_id;     // Broadcast ID of the corresponding RREQ
+  nsaddr_t  rp_first_hop;
 						
   inline int size() { 
   int sz = 0;
@@ -204,12 +206,12 @@ struct hdr_aomdv_reply {
 };
 
 struct hdr_aomdv_error {
-        u_int8_t        re_type;                // Type
-        u_int8_t        reserved[2];            // Reserved
-        u_int8_t        DestCount;                 // DestCount
-        // List of Unreachable destination IP addresses and sequence numbers
-        nsaddr_t        unreachable_dst[AOMDV_MAX_ERRORS];   
-        u_int32_t       unreachable_dst_seqno[AOMDV_MAX_ERRORS];   
+  u_int8_t  re_type;    // Type
+  u_int8_t  reserved[2];      // Reserved
+  u_int8_t  DestCount;     // DestCount
+  // List of Unreachable destination IP addresses and sequence numbers
+  nsaddr_t  unreachable_dst[AOMDV_MAX_ERRORS];   
+  u_int32_t       unreachable_dst_seqno[AOMDV_MAX_ERRORS];   
 
   inline int size() { 
   int sz = 0;
@@ -221,7 +223,7 @@ struct hdr_aomdv_error {
   */
   	sz = (DestCount*2 + 1)*sizeof(u_int32_t);
 	assert(sz);
-        return sz;
+  return sz;
   }
 
 };
@@ -233,7 +235,7 @@ struct hdr_aomdv_rrep_ack {
 
 // for size calculation of header-space reservation
 union hdr_all_aomdv {
-  hdr_aomdv          ah;
+  hdr_aomdv    ah;
   hdr_aomdv_request  rreq;
   hdr_aomdv_reply    rrep;
   hdr_aomdv_error    rerr;
