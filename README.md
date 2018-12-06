@@ -20,7 +20,8 @@ Jaringan Nirkabel 2018
   - [2. Implementasi](#2-implementasi)
     - [2.1 Deskripsi Sistem](#21-deskripsi-sistem)
     - [2.2 Modifikasi](#22-modifikasi)
-  - [3. Referensi](#3-referensi)
+  - [3. Testing](#3-testing)
+  - [4. Referensi](#4-referensi)
 
 ## 1. Konsep
 ### 1.1 Deskripsi Paper
@@ -148,7 +149,10 @@ Implementasi routing protocol MAODV - PDMRP dilakukan pada sistem dengan
 
 **proses**
 
-## 3. Referensi
+## 3. Testing
+* [Skenario Testing](testing.md)
+
+## 4. Referensi
 * [A Tutorial on the Implementation of Ad-hoc On Demand Distance Vector (AODV) Protocol in Network Simulator (NS-2)](https://drive.google.com/file/d/0B6aQ8IUEyp5NekhLZWVwV0lRNU0/edit)
 * [Ad hoc On-Demand Distance Vector (AODV) Routing](https://www.ietf.org/rfc/rfc3561.txt)
 
