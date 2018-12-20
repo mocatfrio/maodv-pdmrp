@@ -142,13 +142,6 @@ Implementasi routing protocol MAODV - PDMRP dilakukan pada sistem dengan
   * NS-2.35 ([Instalasi](/install-ns2.md))
   * Netbeans for C/C++ Development ([Instalasi](https://websiteforstudents.com/how-to-install-netbeans-on-ubuntu-16-04-17-10-18-04/))
   
-### 2.2 Modifikasi
-1. Menambahkan modul energi pada protokol AODV
-2. Menambahkan class energi pada node relay dan destination
-3. Life time setiap node berkurang setiap dia mengirim maupun menerima paket
-
-**proses**
-
 ## 3. Testing
 * [Skenario Testing](testing.md)
 
