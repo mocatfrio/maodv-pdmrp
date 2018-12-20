@@ -273,7 +273,7 @@ class AOMDVBroadcastID {
   friend class AOMDV;
 
 public:  
-  // MODIFIKASI C -- menambahkan parameter cost pada broadcast ID cache
+  // MODIFIKASI C4 -- menambahkan parameter cost pada broadcast ID cache
   AOMDVBroadcastID(nsaddr_t i, u_int32_t b, double c) { 
     src = i; 
     id = b;
@@ -288,7 +288,7 @@ protected:
   LIST_ENTRY(AOMDVBroadcastID)  link;
   nsaddr_t                      src;
   u_int32_t                     id;
-  // MODIFIKASI C -- menambahkan parameter cost pada broadcast ID cache
+  // MODIFIKASI C4 -- menambahkan parameter cost pada broadcast ID cache
   double                        cost; //modif
   double                        expire;   // now + BCAST_ID_SAVE s
   
@@ -394,7 +394,7 @@ protected:
    */
 
   // AODV ns-2.31 code
-  // MODIFIKASI C -- menambahkan parameter cost pada broadcast cache
+  // MODIFIKASI C4 -- menambahkan parameter cost pada broadcast cache
   void id_insert(nsaddr_t id, u_int32_t bid, double cost);
   bool id_lookup(nsaddr_t id, u_int32_t bid);
   AOMDVBroadcastID* id_get(nsaddr_t id, u_int32_t bid, double cost, bool check_cost);
@@ -413,7 +413,7 @@ protected:
 
   // AOMDV code
   // void      sendReply(nsaddr_t ipdst, u_int32_t hop_count, nsaddr_t rpdst, u_int32_t rpseq, u_int32_t lifetime, double timestamp);
-  // MODIFIKASI D1 - menambahkan parameter cost pada send RREP
+  // MODIFIKASI D1 -- menambahkan parameter cost pada send RREP
   void sendReply(nsaddr_t ipdst, u_int32_t hop_count, nsaddr_t rpdst, u_int32_t rpseq, double lifetime, double timestamp, nsaddr_t nexthop, u_int32_t bcast_id, nsaddr_t rp_first_hop, double cost);
   void sendError(Packet *p, bool jitter = true);
             

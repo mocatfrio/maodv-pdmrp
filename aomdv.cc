@@ -347,7 +347,7 @@ AOMDVBroadcastID* AOMDV::id_get(nsaddr_t id, u_int32_t bid, double cost, bool ch
 		// if ((b->src == id) && (b->id == bid))
 		// 	return b;  
 
-		// MODIFIKASI 3C 
+		// MODIFIKASI C4
 		if((b->src == id) && (b->id == bid)) {
 			if(check_cost){
 				if(cost > b->cost)
@@ -384,7 +384,7 @@ void AOMDV::id_purge() {
 	}
 }
 
-// MODIFIKASI 3C - untuk delete BID yg costnya lebih kecil
+// MODIFIKASI C4 - untuk delete BID yg costnya lebih kecil
 void AOMDV::id_delete(nsaddr_t id, u_int32_t bid, double cost) {
 #ifdef DEBUG
 	FILE *fp;
@@ -866,12 +866,6 @@ void AOMDV::recvRequest(Packet *p) {
 	AOMDVBroadcastID* b = NULL;
 	bool kill_request_propagation = false;
 	AOMDV_Path* reverse_path = NULL;
-
-	// MODIFIKASI 2C
-	if(rq->rq_hop_count == 0)
-		rq->rq_cost = 0;
-	else
-		rq->rq_cost = rq->rq_min_life/rq->rq_hop_count;
 		
 	//MODIFIKASI A - menambahkan energy model
   iNode =    (MobileNode *) (Node::get_node_by_address (index) ); 
@@ -886,7 +880,7 @@ void AOMDV::recvRequest(Packet *p) {
 	fclose(fp);   
 #endif // DEBUG
 
-	// MODIFIKASI 3C - Cek jika energy node lebih kecil dari rq_min_life, maka rq_min_life diganti dengan nilai tersebut
+	// MODIFIKASI C2 - Cek jika energy node lebih kecil dari rq_min_life, maka rq_min_life diganti dengan nilai tersebut
 	if (iEnergy < rq->rq_min_life && iEnergy > 0){
 #ifdef DEBUG
 		fp = fopen("result/aomdv-debug.txt", "a");
@@ -897,6 +891,17 @@ void AOMDV::recvRequest(Packet *p) {
 		rq->rq_min_life = iEnergy;
   }
 
+	// MODIFIKASI C3
+	if(rq->rq_hop_count == 0)
+		rq->rq_cost = 0;
+	else
+		rq->rq_cost = rq->rq_min_life/rq->rq_hop_count;
+
+#ifdef DEBUG
+		fp = fopen("result/aomdv-debug.txt", "a");
+		fprintf(fp, "\n%.6f [%11s function]\t Node [%d] -- RREQ [rq_hop_count: %d | rq_min_life: %.4f | rq_cost %.4f]", CURRENT_TIME, __FUNCTION__, index, rq->rq_hop_count, rq->rq_min_life, rq->rq_cost);
+		fclose(fp);   
+#endif // DEBUG
 	
 	/*
 	 * Drop if:
@@ -915,7 +920,7 @@ void AOMDV::recvRequest(Packet *p) {
 		return;
 	} 
 	
-	// MODIFIKASI 3C- Jika sudah pernah menerima paket tersebut, dibandingkan C-nya, kalo C-nya lebih gede, maka re-broadcast
+	// MODIFIKASI C4 -- Jika sudah pernah menerima paket tersebut, dibandingkan C-nya, kalo C-nya lebih gede, maka re-broadcast
 	if ( (b = id_get(rq->rq_src, rq->rq_bcast_id, rq->rq_cost, true)) == NULL)  {		
 		// Cache the broadcast ID
 		id_insert(rq->rq_src, rq->rq_bcast_id, rq->rq_cost);
@@ -940,7 +945,7 @@ void AOMDV::recvRequest(Packet *p) {
 		// create an entry for the reverse route.
 		rt0 = rtable.rt_add(rq->rq_src);
 	}
-	// MODIFIKASI 3C
+	// MODIFIKASI C4
 	else if(rq->rq_cost < rt0->rt_cost) {
 		Packet::free(p);
 		return;
@@ -1067,7 +1072,7 @@ void AOMDV::recvRequest(Packet *p) {
 					 ih->saddr(),             // nexthop
 					 rq->rq_bcast_id,         // broadcast id to identify this route discovery
 					 ih->saddr(),
-					 rq->rq_cost);         			// MODIFIKASI - save the Cost = Min Life / Hop Count
+					 rq->rq_cost);         			// MODIFIKASI D - save the Cost = Min Life / Hop Count
 		
 		Packet::free(p);
 	}
@@ -1191,13 +1196,14 @@ void AOMDV::recvReply(Packet *p) {
 	AOMDVBroadcastID* b = NULL;
 	AOMDV_Path* forward_path = NULL;
 	
-#ifdef DEBUG
-    // manet
-    iNode=    (MobileNode *) (Node::get_node_by_address (index) ); 
-    xpos=     iNode->X(); 
-    ypos=     iNode->Y(); 
-    iEnergy=  iNode->energy_model()->energy();
+	// MODIFIKASI A	
+	// manet
+	iNode =    (MobileNode *) (Node::get_node_by_address (index) ); 
+	xpos =     iNode->X(); 
+	ypos =     iNode->Y(); 
+	iEnergy =  iNode->energy_model()->energy();
 
+#ifdef DEBUG
 		FILE *fp;
     fp = fopen("result/aomdv-debug.txt", "a");	
 		fprintf(fp, "\n%.6f [%11s function]\t Node [%d | Energy: %.4f] received RREP", CURRENT_TIME, __FUNCTION__, index, iEnergy);
@@ -1489,14 +1495,14 @@ void AOMDV::forward(aomdv_rt_entry *rt, Packet *p, double delay) {
 	struct hdr_cmn *ch = HDR_CMN(p);
 	struct hdr_ip *ih = HDR_IP(p);
 	
-	// MODIFIKASI A
-#ifdef DEBUG && index > 0
-    // manet
-    iNode=    (MobileNode *) (Node::get_node_by_address (index) ); 
-    xpos=     iNode->X(); 
-    ypos=     iNode->Y(); 
-    iEnergy=  iNode->energy_model()->energy();
+	// MODIFIKASI A	
+	// manet
+	iNode =    (MobileNode *) (Node::get_node_by_address (index) ); 
+	xpos =     iNode->X(); 
+	ypos =     iNode->Y(); 
+	iEnergy =  iNode->energy_model()->energy();
 
+#ifdef DEBUG && index > 0
 		FILE *fp;
     fp = fopen("result/aomdv-debug.txt", "a");
     fprintf(fp, "\n%.6f [%11s function]\t Node [%d | Energy: %.4f] forwarding packet...", CURRENT_TIME, __FUNCTION__, index, iEnergy);
@@ -1574,14 +1580,14 @@ void AOMDV::sendRequest(nsaddr_t dst) {
 	aomdv_rt_entry *rt = rtable.rt_lookup(dst);
 	assert(rt);
 	
-		// MODIFIKASI A
-#ifdef DEBUG
-    // manet
-    iNode=    (MobileNode *) (Node::get_node_by_address (index) ); 
-    xpos=     iNode->X(); 
-    ypos=     iNode->Y(); 
-    iEnergy=  iNode->energy_model()->energy();
+	// MODIFIKASI A
+	// manet
+	iNode =    (MobileNode *) (Node::get_node_by_address (index) ); 
+	xpos =     iNode->X(); 
+	ypos =     iNode->Y(); 
+	iEnergy =  iNode->energy_model()->energy();
 
+#ifdef DEBUG
 		FILE *fp;
     fp = fopen("result/aomdv-debug.txt", "a");	
 		fprintf(fp, "\n%.6f [%11s function]\t RREQ(%d) Node [%d | Energy: %.4f] sending RREQ to Node [%d], timeout %f ms", CURRENT_TIME, __FUNCTION__, ++route_request, index, iEnergy, rt->rt_dst, rt->rt_req_timeout - CURRENT_TIME);
@@ -1669,9 +1675,6 @@ void AOMDV::sendRequest(nsaddr_t dst) {
 	ih->daddr() = IP_BROADCAST;
 	ih->sport() = RT_PORT;
 	ih->dport() = RT_PORT;
-
-	iNode=    (MobileNode *) (Node::get_node_by_address (index) ); 
-  iEnergy=  iNode->energy_model()->energy();
 	
 	// Fill up some more fields. 
 	rq->rq_type = AOMDVTYPE_RREQ;
@@ -1696,15 +1699,15 @@ void AOMDV::sendReply(nsaddr_t ipdst, u_int32_t hop_count, nsaddr_t rpdst, u_int
 	struct hdr_cmn *ch = HDR_CMN(p);
 	struct hdr_ip *ih = HDR_IP(p);
 	struct hdr_aomdv_reply *rp = HDR_AOMDV_REPLY(p);
-	
-		// MODIFIKASI A
-#ifdef DEBUG
-    // manet
-    iNode=    (MobileNode *) (Node::get_node_by_address (index) ); 
-    xpos=     iNode->X(); 
-    ypos=     iNode->Y(); 
-    iEnergy=  iNode->energy_model()->energy();
 
+	// MODIFIKASI A	
+	// manet
+	iNode =    (MobileNode *) (Node::get_node_by_address (index) ); 
+	xpos =     iNode->X(); 
+	ypos =     iNode->Y(); 
+	iEnergy =  iNode->energy_model()->energy();
+	
+#ifdef DEBUG
 		FILE *fp;
     fp = fopen("result/aomdv-debug.txt", "a");	
 		fprintf(fp, "\n%.6f [%11s function]\t Node [%d | Energy: %.4f] sending RREP", CURRENT_TIME, __FUNCTION__, index, iEnergy);
@@ -1797,14 +1800,14 @@ void AOMDV::sendHello() {
 	struct hdr_ip *ih = HDR_IP(p);
 	struct hdr_aomdv_reply *rh = HDR_AOMDV_REPLY(p);
 
-		// MODIFIKASI A
+	// MODIFIKASI A	
+	// manet
+	iNode =    (MobileNode *) (Node::get_node_by_address (index) ); 
+	xpos =     iNode->X(); 
+	ypos =     iNode->Y(); 
+	iEnergy =  iNode->energy_model()->energy();
+	
 #ifdef DEBUG
-    // manet
-    iNode=    (MobileNode *) (Node::get_node_by_address (index) ); 
-    xpos=     iNode->X(); 
-    ypos=     iNode->Y(); 
-    iEnergy=  iNode->energy_model()->energy();
-
 		FILE *fp;
     fp = fopen("result/aomdv-debug.txt", "a");	
 		fprintf(fp, "\n%.6f [%11s function]\t Node [%d | Energy: %.4f] sending Hello Message at %.2f", CURRENT_TIME, __FUNCTION__, index, iEnergy, Scheduler::instance().clock());	 
@@ -1838,15 +1841,14 @@ void AOMDV::sendHello() {
 
 
 void AOMDV::recvHello(Packet *p) {
-
-		// MODIFIKASI A
+	// MODIFIKASI A	
+	// manet
+	iNode =    (MobileNode *) (Node::get_node_by_address (index) ); 
+	xpos =     iNode->X(); 
+	ypos =     iNode->Y(); 
+	iEnergy =  iNode->energy_model()->energy();
+	
 #ifdef DEBUG
-    // manet
-    iNode=    (MobileNode *) (Node::get_node_by_address (index) ); 
-    xpos=     iNode->X(); 
-    ypos=     iNode->Y(); 
-    iEnergy=  iNode->energy_model()->energy();
-
 		FILE *fp;
     fp = fopen("result/aomdv-debug.txt", "a");	
 		fprintf(fp, "\n%.6f [%11s function]\t Node [%d | Energy: %.4f] receive Hello Message", CURRENT_TIME, __FUNCTION__, index, iEnergy);
