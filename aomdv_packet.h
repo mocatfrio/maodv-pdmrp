@@ -134,12 +134,14 @@ struct hdr_aomdv_request {
   nsaddr_t    rq_src;         // Source IP Address
   u_int32_t   rq_src_seqno;   // Source Sequence Number
 
+  // MODIFIKASI C1 - menambah variabel rq_min_life dan rq_cost pada header RREQ
+  double    rq_min_life;      // check min life for each node
+  double    rq_cost;          // check the cost for each path
+
   double    rq_timestamp;     // when REQUEST sent;
 					                    // used to compute route discovery latency
-// AOMDV code
+  // AOMDV code
   nsaddr_t  rq_first_hop;     // First Hop taken by the RREQ
-  // menambah variable header
-  double    rq_min_life;      // modif for check min life for each node
 
   // This define turns on gratuitous replies- see aodv.cc for implementation contributed by
   // Anant Utgikar, 09/16/02.
@@ -167,19 +169,22 @@ struct hdr_aomdv_request {
 };
 
 struct hdr_aomdv_reply {
-  u_int8_t  rp_type;  // Packet Type
-  u_int8_t  reserved[2];
-  u_int8_t  rp_hop_count;     // Hop Count
-  nsaddr_t  rp_dst;     // Destination IP Address
-  u_int32_t       rp_dst_seqno;     // Destination Sequence Number
-  nsaddr_t  rp_src;     // Source IP Address
-  double	   rp_lifetime;      // Lifetime
+  u_int8_t    rp_type;  // Packet Type
+  u_int8_t    reserved[2];
+  u_int8_t    rp_hop_count;     // Hop Count
+  nsaddr_t    rp_dst;     // Destination IP Address
+  u_int32_t   rp_dst_seqno;     // Destination Sequence Number
+  nsaddr_t    rp_src;     // Source IP Address
+  double	    rp_lifetime;      // Lifetime
 	
-  double    rp_timestamp;     // when corresponding REQ sent;
+  // MODIFIKASI D1 - menambah variabel rp_cost pada header RREP
+  double      rp_cost;          // check the cost for each path
+
+  double      rp_timestamp;     // when corresponding REQ sent;
 						// used to compute route discovery latency
-// AOMDV code
-  u_int32_t       rp_bcast_id;     // Broadcast ID of the corresponding RREQ
-  nsaddr_t  rp_first_hop;
+  // AOMDV code
+  u_int32_t   rp_bcast_id;     // Broadcast ID of the corresponding RREQ
+  nsaddr_t    rp_first_hop;
 						
   inline int size() { 
   int sz = 0;
@@ -206,12 +211,12 @@ struct hdr_aomdv_reply {
 };
 
 struct hdr_aomdv_error {
-  u_int8_t  re_type;    // Type
-  u_int8_t  reserved[2];      // Reserved
-  u_int8_t  DestCount;     // DestCount
+  u_int8_t    re_type;    // Type
+  u_int8_t    reserved[2];      // Reserved
+  u_int8_t    DestCount;     // DestCount
   // List of Unreachable destination IP addresses and sequence numbers
-  nsaddr_t  unreachable_dst[AOMDV_MAX_ERRORS];   
-  u_int32_t       unreachable_dst_seqno[AOMDV_MAX_ERRORS];   
+  nsaddr_t    unreachable_dst[AOMDV_MAX_ERRORS];   
+  u_int32_t   unreachable_dst_seqno[AOMDV_MAX_ERRORS];   
 
   inline int size() { 
   int sz = 0;

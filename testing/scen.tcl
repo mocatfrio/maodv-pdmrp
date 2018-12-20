@@ -14,15 +14,14 @@ set val(ant)        		  Antenna/OmniAntenna		      ;# antenna model
 set opt(x)              	530                         ;# X dimension of the topography
 set opt(y)              	530                         ;# Y dimension of the topography
 set val(ifqlen)         	50				                  ;# max packet in ifq
-set val(nn)             	5				                    ;# how many nodes are simulated
+set val(nn)             	10				                  ;# how many nodes are simulated
 set val(seed)				      1.0				                  ;# seed cbr
 set val(adhocRouting)   	AOMDV				                ;# routing protocol
 set val(stop)           	200				                  ;# simulation time
-set val(cp)					      "cbr5node.tcl"			        ;#<-- traffic file
-set val(sc)               "setdes500x500.tcl"		      ;#<-- mobility file 
-# set val(sc)                 "setdest5node.tcl"          ;#<-- mobility file 
+set val(cp)					      "cbr10.tcl"			            ;#<-- traffic file
+set val(sc)               "setdest10.tcl"		          ;#<-- mobility file
 
-# add energy model
+# MODIFIKASI A - menambah energy model dan mendenisikan nilainya  
 # src: https://www.nsnam.com/2012/11/energy-model-in-network-simulator-2-ns2.html
 set val(energy_mod)       EnergyModel                 ;# energy model
 set val(energy_init)      5                           ;# init val for energy
@@ -75,7 +74,7 @@ set god_ [create-god $val(nn)]
 #                     -macTrace ON \
 #                     -movementTrace ON
 								
-#with energy
+# MODIFIKASI A - konfigurasi node dengan energy
 $ns_ node-config    -adhocRouting $val(adhocRouting) \
                     -llType $val(ll) \
                     -macType $val(mac) \
@@ -122,7 +121,7 @@ Phy/WirelessPhy set	CSThresh_ 5.57189e-11 ; #400m capture threshold  range
 
 #  Create the specified number of nodes [$val(nn)] and "attach" them
 #  to the channel. 
-#  plus random energy
+#  RANDOM ENERGY
 #  src : http://slogix.in/how-to-find-residual-energy-of-the-nodes-in-ns2
 # for {set i 0} {$i < $val(nn)} {incr i} {
 #     set energy($i) [expr {int(1 + rand()*10)}];#random to range 0-10

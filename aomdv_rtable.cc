@@ -86,146 +86,131 @@ The AODV code developed by the CMU/MONARCH group was optimized and tuned by Sami
   The Routing Table
 */
 
-aomdv_rt_entry::aomdv_rt_entry()
-{
+aomdv_rt_entry::aomdv_rt_entry() {
 int i;
 
- rt_req_timeout = 0.0;
- rt_req_cnt = 0;
+rt_req_timeout = 0.0;
+rt_req_cnt = 0;
 
- rt_dst = 0;
- rt_seqno = 0;
- // AOMDV code
- rt_last_hop_count = INFINITY2;
- rt_advertised_hops = INFINITY2;
- LIST_INIT(&rt_path_list);
- rt_highest_seqno_heard = 0;
- rt_num_paths_ = 0;
- rt_error = false;
- 
- LIST_INIT(&rt_pclist);
- rt_expire = 0.0;
- rt_flags = RTF_DOWN;
+rt_dst = 0;
+rt_seqno = 0;
+// AOMDV code
+rt_last_hop_count = INFINITY2;
+rt_advertised_hops = INFINITY2;
+LIST_INIT(&rt_path_list);
+rt_highest_seqno_heard = 0;
+rt_num_paths_ = 0;
+rt_error = false;
 
- /*
- rt_errors = 0;
- rt_error_time = 0.0;
- */
+LIST_INIT(&rt_pclist);
+rt_expire = 0.0;
+rt_flags = RTF_DOWN;
+
+/*
+rt_errors = 0;
+rt_error_time = 0.0;
+*/
 
 
- for (i=0; i < MAX_HISTORY; i++) {
-   rt_disc_latency[i] = 0.0;
- }
- hist_indx = 0;
- rt_req_last_ttl = 0;
+for (i=0; i < MAX_HISTORY; i++) {
+  rt_disc_latency[i] = 0.0;
+}
+hist_indx = 0;
+rt_req_last_ttl = 0;
 
- LIST_INIT(&rt_nblist);
+LIST_INIT(&rt_nblist);
 
 }
 
 
-aomdv_rt_entry::~aomdv_rt_entry()
-{
-AOMDV_Neighbor *nb;
+aomdv_rt_entry::~aomdv_rt_entry() {
+  AOMDV_Neighbor *nb;
 
- while((nb = rt_nblist.lh_first)) {
-   LIST_REMOVE(nb, nb_link);
-   delete nb;
- }
+  while((nb = rt_nblist.lh_first)) {
+    LIST_REMOVE(nb, nb_link);
+    delete nb;
+  }
 
- // AOMDV code
-AOMDV_Path *path;
+  // AOMDV code
+  AOMDV_Path *path;
 
- while((path = rt_path_list.lh_first)) {
-   LIST_REMOVE(path, path_link);
-   delete path;
- }
+  while((path = rt_path_list.lh_first)) {
+    LIST_REMOVE(path, path_link);
+    delete path;
+  }
  
-AOMDV_Precursor *pc;
+  AOMDV_Precursor *pc;
 
- while((pc = rt_pclist.lh_first)) {
-   LIST_REMOVE(pc, pc_link);
-   delete pc;
- }
-
+  while((pc = rt_pclist.lh_first)) {
+    LIST_REMOVE(pc, pc_link);
+    delete pc;
+  }
 }
 
 
-void
-aomdv_rt_entry::nb_insert(nsaddr_t id)
-{
-AOMDV_Neighbor *nb = new AOMDV_Neighbor(id);
+void aomdv_rt_entry::nb_insert(nsaddr_t id) {
+  AOMDV_Neighbor *nb = new AOMDV_Neighbor(id);
         
- assert(nb);
- nb->nb_expire = 0;
- LIST_INSERT_HEAD(&rt_nblist, nb, nb_link);
-printf("<#message#>");
+  assert(nb);
+  nb->nb_expire = 0;
+  LIST_INSERT_HEAD(&rt_nblist, nb, nb_link);
+  printf("<#message#>");
 }
 
 
-AOMDV_Neighbor*
-aomdv_rt_entry::nb_lookup(nsaddr_t id)
-{
-AOMDV_Neighbor *nb = rt_nblist.lh_first;
+AOMDV_Neighbor* aomdv_rt_entry::nb_lookup(nsaddr_t id) {
+  AOMDV_Neighbor *nb = rt_nblist.lh_first;
 
- for(; nb; nb = nb->nb_link.le_next) {
-   if(nb->nb_addr == id)
-     break;
- }
- return nb;
-
+  for(; nb; nb = nb->nb_link.le_next) {
+    if(nb->nb_addr == id)
+      break;
+  }
+  return nb;
 }
 
 // AOMDV code
-AOMDV_Path*
-aomdv_rt_entry::path_insert(nsaddr_t nexthop, u_int16_t hopcount, double expire_time, nsaddr_t lasthop) {
-AOMDV_Path *path = new AOMDV_Path(nexthop, hopcount, expire_time, lasthop);
+AOMDV_Path* aomdv_rt_entry::path_insert(nsaddr_t nexthop, u_int16_t hopcount, double expire_time, nsaddr_t lasthop, double cost) {
+  AOMDV_Path *path = new AOMDV_Path(nexthop, hopcount, expire_time, lasthop, cost);
         
-   assert(path);
-#ifdef DEBUG
-   fprintf(stderr, "%s: (%d\t%d)\n", __FUNCTION__, path->nexthop, path->hopcount);
-#endif // DEBUG
+  assert(path);
+	// printf("\n%.6f [%s function]\t (Next hop: %d\t Hop count: %d)", CURRENT_TIME, __FUNCTION__, path->nexthop, path->hopcount);
+
 
    /*
     * Insert path at the end of the list
     */
-AOMDV_Path *p = rt_path_list.lh_first;
-   if (p) {
-      for(; p->path_link.le_next; p = p->path_link.le_next) 
-	/* Do nothing */;
-      LIST_INSERT_AFTER(p, path, path_link);
-   }
-   else {
-      LIST_INSERT_HEAD(&rt_path_list, path, path_link);
-   }
-   rt_num_paths_ += 1;
+  AOMDV_Path *p = rt_path_list.lh_first;
+  if (p) {
+    for(; p->path_link.le_next; p = p->path_link.le_next) 
+/* Do nothing */;
+    LIST_INSERT_AFTER(p, path, path_link);
+  }
+  else {
+    LIST_INSERT_HEAD(&rt_path_list, path, path_link);
+  }
+  rt_num_paths_ += 1;
 
-   return path;
+  return path;
 }
 
-AOMDV_Path*
-aomdv_rt_entry::path_lookup(nsaddr_t id)
-{
-AOMDV_Path *path = rt_path_list.lh_first;
+AOMDV_Path* aomdv_rt_entry::path_lookup(nsaddr_t id) {
+  AOMDV_Path *path = rt_path_list.lh_first;
 
- for(; path; path = path->path_link.le_next) {
-   if (path->nexthop == id)
+  for(; path; path = path->path_link.le_next) {
+    if (path->nexthop == id)
       return path;
- }
- return NULL;
-
+  }
+  return NULL;
 }
 
-AOMDV_Path*
-aomdv_rt_entry::disjoint_path_lookup(nsaddr_t nexthop, nsaddr_t lasthop)
-{
-AOMDV_Path *path = rt_path_list.lh_first;
+AOMDV_Path* aomdv_rt_entry::disjoint_path_lookup(nsaddr_t nexthop, nsaddr_t lasthop) {
+  AOMDV_Path *path = rt_path_list.lh_first;
 
- for(; path; path = path->path_link.le_next) {
-   if ( (path->nexthop == nexthop) && (path->lasthop == lasthop) )
+  for(; path; path = path->path_link.le_next) {
+    if ( (path->nexthop == nexthop) && (path->lasthop == lasthop) )
       return path;
- }
- return NULL;
+  }
+  return NULL;
 
 }
 
@@ -244,65 +229,57 @@ aomdv_rt_entry::new_disjoint_path(nsaddr_t nexthop, nsaddr_t lasthop)
 }
 
 
-AOMDV_Path*
-aomdv_rt_entry::path_lookup_lasthop(nsaddr_t id)
-{
-AOMDV_Path *path = rt_path_list.lh_first;
+AOMDV_Path* aomdv_rt_entry::path_lookup_lasthop(nsaddr_t id) {
+  AOMDV_Path *path = rt_path_list.lh_first;
 
- for(; path; path = path->path_link.le_next) {
-   if (path->lasthop == id)
+  for(; path; path = path->path_link.le_next) {
+    if (path->lasthop == id)
       return path;
- }
- return NULL;
-
+  }
+  return NULL;
 }
 
+void aomdv_rt_entry::path_delete(nsaddr_t id) {
+  AOMDV_Path *path = rt_path_list.lh_first;
 
-void
-aomdv_rt_entry::path_delete(nsaddr_t id) {
-AOMDV_Path *path = rt_path_list.lh_first;
-
- for(; path; path = path->path_link.le_next) {
-   if(path->nexthop == id) {
-     LIST_REMOVE(path,path_link);
-     delete path;
-     rt_num_paths_ -= 1;
-     break;
-   }
- }
-
+  for(; path; path = path->path_link.le_next) {
+    if(path->nexthop == id) {
+      LIST_REMOVE(path,path_link);
+      delete path;
+      rt_num_paths_ -= 1;
+      break;
+    }
+  }
 }
 
-void
-aomdv_rt_entry::path_delete(void) {
-AOMDV_Path *path;
+void aomdv_rt_entry::path_delete(void) {
+  AOMDV_Path *path;
 
- while((path = rt_path_list.lh_first)) {
-   LIST_REMOVE(path, path_link);
-   delete path;
- }
- rt_num_paths_ = 0;
+  while((path = rt_path_list.lh_first)) {
+    LIST_REMOVE(path, path_link);
+    delete path;
+  }
+  rt_num_paths_ = 0;
 }  
 
-void
-aomdv_rt_entry::path_delete_longest(void) {
-AOMDV_Path *p = rt_path_list.lh_first;
-AOMDV_Path *path = NULL;
-u_int16_t max_hopcount = 0;
+void aomdv_rt_entry::path_delete_longest(void) {
+  AOMDV_Path *p = rt_path_list.lh_first;
+  AOMDV_Path *path = NULL;
+  u_int16_t max_hopcount = 0;
 
- for(; p; p = p->path_link.le_next) {
-   if(p->hopcount > max_hopcount) {
+  for(; p; p = p->path_link.le_next) {
+    if(p->hopcount > max_hopcount) {
       assert (p->hopcount != INFINITY2);
       path = p;
       max_hopcount = p->hopcount;
-   }
- }
+    }
+  }
 
- if (path) {
-     LIST_REMOVE(path, path_link);
-     delete path;
-     rt_num_paths_ -= 1;
- }
+  if (path) {
+    LIST_REMOVE(path, path_link);
+    delete path;
+    rt_num_paths_ -= 1;
+  }
 }
 
 bool
@@ -319,43 +296,38 @@ AOMDV_Path *path;
  }
 }  
 
-AOMDV_Path*
-aomdv_rt_entry::path_findMinHop(void)
-{
-AOMDV_Path *p = rt_path_list.lh_first;
-AOMDV_Path *path = NULL;
-u_int16_t min_hopcount = 0xffff;
+AOMDV_Path* aomdv_rt_entry::path_findMinHop(void) {
+  AOMDV_Path *p = rt_path_list.lh_first;
+  AOMDV_Path *path = NULL;
+  u_int16_t min_hopcount = 0xffff;
 
- for (; p; p = p->path_link.le_next) {
-   if (p->hopcount < min_hopcount) {
+  for (; p; p = p->path_link.le_next) {
+    if (p->hopcount < min_hopcount) {
       path = p;
       min_hopcount = p->hopcount;
-   }
- }
+    }
+  }
 
- return path;
+  return path;
 }
 
-AOMDV_Path*
-aomdv_rt_entry::path_find(void) {
-AOMDV_Path *p = rt_path_list.lh_first;
+AOMDV_Path* aomdv_rt_entry::path_find(void) {
+  AOMDV_Path *p = rt_path_list.lh_first;
 
-   return p;
+  return p;
 }
 
-u_int16_t
-aomdv_rt_entry::path_get_max_hopcount(void)
-{
-AOMDV_Path *path = rt_path_list.lh_first;
-u_int16_t max_hopcount = 0;
+u_int16_t aomdv_rt_entry::path_get_max_hopcount(void) {
+  AOMDV_Path *path = rt_path_list.lh_first;
+  u_int16_t max_hopcount = 0;
 
- for(; path; path = path->path_link.le_next) {
-   if(path->hopcount > max_hopcount) {
+  for(; path; path = path->path_link.le_next) {
+    if(path->hopcount > max_hopcount) {
       max_hopcount = path->hopcount;
-   }
- }
- if (max_hopcount == 0) return INFINITY2;
- else return max_hopcount;
+    }
+  }
+  if (max_hopcount == 0) return INFINITY2;
+  else return max_hopcount;
 }
 
 u_int16_t
@@ -466,9 +438,7 @@ AOMDV_Precursor *pc;
   The Routing Table
 */
 
-aomdv_rt_entry*
-aomdv_rtable::rt_lookup(nsaddr_t id)
-{
+aomdv_rt_entry* aomdv_rtable::rt_lookup(nsaddr_t id) {
 aomdv_rt_entry *rt = rthead.lh_first;
 
  for(; rt; rt = rt->rt_link.le_next) {
@@ -532,4 +502,3 @@ bool aomdv_rtable::rt_has_active_route() {
   }
   return false;
 }
-

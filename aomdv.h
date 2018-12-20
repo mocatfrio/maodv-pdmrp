@@ -104,9 +104,10 @@ The AODV code developed by the CMU/MONARCH group was optimized and tuned by Sami
 #define AOMDV_MAX_SALVAGE_COUNT  10
 #define AOMDV_EXPANDING_RING_SEARCH
 
+// MODIFIKASI B - mengaktifkan Link Disjoint Path
 // AOMDV code
-//#define AOMDV_LINK_DISJOINT_PATHS
-#define AOMDV_NODE_DISJOINT_PATHS
+#define AOMDV_LINK_DISJOINT_PATHS
+// #define AOMDV_NODE_DISJOINT_PATHS
 
 /*
   Allows local repair of routes 
@@ -271,10 +272,12 @@ LIST_HEAD(aomdv_routes, AOMDV_Route);
 class AOMDVBroadcastID {
   friend class AOMDV;
 
-public:
-  AOMDVBroadcastID(nsaddr_t i, u_int32_t b) { 
+public:  
+  // MODIFIKASI C -- menambahkan parameter cost pada broadcast ID cache
+  AOMDVBroadcastID(nsaddr_t i, u_int32_t b, double c) { 
     src = i; 
-    id = b;  
+    id = b;
+    cost = c;
     // AOMDV code
     count=0;  
     LIST_INIT(&reverse_path_list);
@@ -285,6 +288,8 @@ protected:
   LIST_ENTRY(AOMDVBroadcastID)  link;
   nsaddr_t                      src;
   u_int32_t                     id;
+  // MODIFIKASI C -- menambahkan parameter cost pada broadcast ID cache
+  double                        cost; //modif
   double                        expire;   // now + BCAST_ID_SAVE s
   
   // AOMDV code
@@ -389,10 +394,13 @@ protected:
    */
 
   // AODV ns-2.31 code
-  void id_insert(nsaddr_t id, u_int32_t bid);
+  // MODIFIKASI C -- menambahkan parameter cost pada broadcast cache
+  void id_insert(nsaddr_t id, u_int32_t bid, double cost);
   bool id_lookup(nsaddr_t id, u_int32_t bid);
-  AOMDVBroadcastID* id_get(nsaddr_t id, u_int32_t bid);
+  AOMDVBroadcastID* id_get(nsaddr_t id, u_int32_t bid, double cost, bool check_cost);
   void id_purge(void);
+  void id_delete(nsaddr_t id, u_int32_t bid, double cost);
+
 
   /*
    * Packet TX Routines
@@ -405,7 +413,8 @@ protected:
 
   // AOMDV code
   // void      sendReply(nsaddr_t ipdst, u_int32_t hop_count, nsaddr_t rpdst, u_int32_t rpseq, u_int32_t lifetime, double timestamp);
-  void sendReply(nsaddr_t ipdst, u_int32_t hop_count, nsaddr_t rpdst, u_int32_t rpseq, double lifetime, double timestamp, nsaddr_t nexthop, u_int32_t bcast_id, nsaddr_t rp_first_hop);
+  // MODIFIKASI D1 - menambahkan parameter cost pada send RREP
+  void sendReply(nsaddr_t ipdst, u_int32_t hop_count, nsaddr_t rpdst, u_int32_t rpseq, double lifetime, double timestamp, nsaddr_t nexthop, u_int32_t bcast_id, nsaddr_t rp_first_hop, double cost);
   void sendError(Packet *p, bool jitter = true);
             
   /*

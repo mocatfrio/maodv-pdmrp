@@ -116,12 +116,14 @@ class AOMDV_Path {
         friend class AOMDV;
         friend class aomdv_rt_entry;
  public:
-        AOMDV_Path(nsaddr_t nh, u_int16_t h, double expire_time, nsaddr_t lh=0) { 
+        // MODIFIKASI E2
+        AOMDV_Path(nsaddr_t nh, u_int16_t h, double expire_time, nsaddr_t lh=0, double cost=0) { 
            nexthop = nh;
            hopcount = h;
            expire = expire_time;
            ts = Scheduler::instance().clock();
            lasthop = lh;
+           cost = cost;
            // CHANGE
            error = false;
            // CHANGE    
@@ -143,6 +145,8 @@ class AOMDV_Path {
         double          expire;     // expiration timeout
         double          ts;         // time when we saw this nexthop
         nsaddr_t        lasthop;    // lasthop address
+        // MODIFIKASI E2 -- kasih variabel cost
+        double          cost;
         // CHANGE
         bool            error;
         // CHANGE
@@ -183,7 +187,8 @@ class aomdv_rt_entry {
         AOMDV_Neighbor*  nb_lookup(nsaddr_t id);
 
  // AOMDV code
-        AOMDV_Path*   path_insert(nsaddr_t nexthop, u_int16_t hopcount, double expire_time, nsaddr_t lasthop=0);
+        // MODIFIKASI E1
+        AOMDV_Path*   path_insert(nsaddr_t nexthop, u_int16_t hopcount, double expire_time, nsaddr_t lasthop=0, double cost=0);
 
         AOMDV_Path*   path_lookup(nsaddr_t id);  // lookup path by nexthop
 
@@ -219,18 +224,21 @@ class aomdv_rt_entry {
         u_int32_t       rt_seqno;
 	/* u_int8_t 	rt_interface; */
  // AOMDV code
-        u_int16_t       rt_hops;             // hop count
-        u_int16_t       rt_advertised_hops;  // advertised hop count
+        u_int16_t       rt_hops;                // hop count
+        u_int16_t       rt_advertised_hops;     // advertised hop count
 	int 		rt_last_hop_count;	// last valid hop count
+        // MODIFIKASI E1
+        double           rt_cost;               //menyimpan nilai cost = minimum life / hop count
+
  // AOMDV code
-        aomdv_paths      rt_path_list;     // list of paths
+        aomdv_paths     rt_path_list;           // list of paths
         u_int32_t       rt_highest_seqno_heard; 
         int             rt_num_paths_;
 	bool rt_error;
         
 	/* list of precursors */ 
         aomdv_precursors rt_pclist;
-        double          rt_expire;     		// when entry expires
+        double           rt_expire;             // when entry expires
 
 #define RTF_DOWN 0
 #define RTF_UP 1
@@ -268,11 +276,12 @@ class aomdv_rtable {
  public:
 	aomdv_rtable() { LIST_INIT(&rthead); }
 
-        aomdv_rt_entry*       head() { return rthead.lh_first; }
+        aomdv_rt_entry*      head() { return rthead.lh_first; }
 
-        aomdv_rt_entry*       rt_add(nsaddr_t id);
+        aomdv_rt_entry*      rt_add(nsaddr_t id);
         void                 rt_delete(nsaddr_t id);
-        aomdv_rt_entry*       rt_lookup(nsaddr_t id);
+        aomdv_rt_entry*      rt_lookup(nsaddr_t id);
+        void                 rt_print();
  // AOMDV code
 	void                 rt_dumptable();
 	bool                 rt_has_active_route();
